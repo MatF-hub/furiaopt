@@ -1,0 +1,11 @@
+{
+  "name": "furiaoptimizer",
+  "version-string": "0.1.0",
+  "description": "Modern C++ nonlinear optimization library",
+  "dependencies": [
+    "eigen3",
+    "spdlog",
+    "nlohmann-json",
+    "catch2"
+  ]
+}

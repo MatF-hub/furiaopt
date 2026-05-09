@@ -1,0 +1,15 @@
+# Prerequisites
+build/
+vcpkg_installed/
+
+# vcpkg
+vcpkg/
+
+# IDEs
+.vscode/
+.cmake/
+
+# Compiled files
+*.o
+*.a
+*.so
