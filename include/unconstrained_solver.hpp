@@ -3,11 +3,24 @@
 
 namespace furiaoptimizer{
 
+enum class DirectionMethod {
+    GradientDescent,
+    GaussNewton,
+    BFGS,
+    ExactNewton
+};
+
+enum class GlobalizationMethod {
+    LineSearch,
+    TrustRegion
+};
 struct SolverOptions{
-    int max_iter = 100;
-    double gradient_tolerance = 1e-6;
-    double step_tolerance = 1e-6;
-    double function_tolerance = 1e-6;
+    DirectionMethod direction_method = DirectionMethod::GradientDescent;
+    GlobalizationMethod globalization_method = GlobalizationMethod::LineSearch;
+    int max_iter = 5e4;
+    double gradient_tolerance = 1e-10;
+    double step_tolerance = 1e-10;
+    double function_tolerance = 1e-10;
 };
 
 struct SolverSummary {
@@ -17,18 +30,32 @@ struct SolverSummary {
     bool converged = false;
 };
 
-using CostFunc = std::function<double(const Eigen::VectorXd& params, const Eigen::VectorXd& x)>;
+struct Result {
+    Eigen::VectorXd x;
+    SolverSummary summary;
+};
 
+using CostFunc = std::function<double(const Eigen::VectorXd& params, const Eigen::VectorXd& x)>;
+using GradientFunc = std::function<Eigen::VectorXd(const Eigen::VectorXd& params, const Eigen::VectorXd& x)>;
+using HessianFunc = std::function<Eigen::MatrixXd(const Eigen::VectorXd& params, const Eigen::VectorXd& x)>;
 class Solver{
 
     SolverOptions options_;
-    SolverSummary summary_;
 
-    public:
+public:
 
-    void SetOptions(SolverOptions options) { options_ = std::move(options); };
+    Solver() = default;
 
-    void Solve(const CostFunc& f, const Eigen::VectorXd& params, Eigen::VectorXd& x);
+    void set_options(SolverOptions options) { options_ = std::move(options); };
+
+    Result solve(const CostFunc& f, const Eigen::VectorXd& params, const Eigen::VectorXd& x);
+    Result solve(const CostFunc& f, const GradientFunc& g, const Eigen::VectorXd& params, const Eigen::VectorXd& x);
+    Result solve(const CostFunc& f, const GradientFunc& g, const HessianFunc& h, const Eigen::VectorXd& params, const Eigen::VectorXd& x);
+
+    Eigen::VectorXd compute_direction(const Eigen::VectorXd& g);
+    Eigen::VectorXd compute_direction(const Eigen::VectorXd& g, const Eigen::MatrixXd& h);
+
+    double compute_step_length(const CostFunc& f, const Eigen::VectorXd& g, const Eigen::VectorXd& params, const Eigen::VectorXd& x, const Eigen::VectorXd& direction);
 };
 
 }
