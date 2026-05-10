@@ -37,6 +37,7 @@ find_package(nlohmann_json CONFIG REQUIRED)
 
 add_library(furiaoptimizer
     src/unconstrained_solver.cpp
+    src/direction_strategy.cpp
 )
 
 add_library(FuriaOptimizer::furiaoptimizer ALIAS furiaoptimizer)

@@ -1,0 +1,22 @@
+#pragma once
+
+#include <Eigen/Dense> // For Eigen::VectorXd and Eigen::MatrixXd
+#include <optional>
+#include "solver_config.hpp"
+
+namespace furiaoptimizer
+{
+
+    Eigen::VectorXd compute_gradient(const Problem& problem, const Eigen::VectorXd& x)
+    {
+        if (problem.hasGradient()){
+            return problem.gradient_func.value()(problem.params, x);
+        }
+        else
+        {
+            //Finite difference approximation path for the gradient
+        }
+        throw std::runtime_error("Unable to compute gradient: no analytic gradient provided and finite difference approximation not implemented");
+    }
+    
+}

@@ -4,6 +4,7 @@
 // The Rosenbrock function itself
 #include <Eigen/Dense>
 #include <cmath>
+#include <random>
 
 //Config loader
 #include "config_loader.hpp"
@@ -48,23 +49,52 @@ Eigen::VectorXd rosenbrock_gradient(const Eigen::VectorXd& params, const Eigen::
     return grad;
 }
 
+Eigen::MatrixXd rosenbrock_hessian(const Eigen::VectorXd& params, const Eigen::VectorXd& x) {
+    double b = params[1];
+    double x0 = x[0];
+    double x1 = x[1];
+    Eigen::MatrixXd hessian(2, 2);
+    //ddf_dxdx
+    hessian(0, 0) = 2 - 4 * b * (x1 - std::pow(x0, 2)) + 8 * b * std::pow(x0, 2);
+    //ddf_dxdy
+    hessian(0, 1) = -4 * b * x0;
+    //ddf_dydx
+    hessian(1, 0) = -4 * b * x0; // Symmetric
+    //ddf_dydy
+    hessian(1, 1) = 2 * b;
+    return hessian;
+}
+
 int main()
 {
-    furiaoptimizer::SolverOptions options = furiaoptimizer::load_solver_options("/home/matteo/optimizer_ws/source/config/config.json");
+    //Setup solver options
+    furiaoptimizer::SolverOptions options = furiaoptimizer::load_solver_options("config/config.json");
 
-    init_logger(options.log_file_folder_path);
-    spdlog::info("Application started");
-
-    furiaoptimizer::Solver default_solver(options);
-
+    //Setup problem to solve
+    furiaoptimizer::Problem problem;
+    problem.cost_func = rosenbrock;
+    problem.gradient_func = rosenbrock_gradient;
+    problem.hessian_func = rosenbrock_hessian;
+    // Setup the random number generator for random initialziation
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<double> dist_x(-2.0, 2.0);
+    std::uniform_real_distribution<double> dist_y(-1.0, 2.0);
     Eigen::VectorXd x_init(2);
-    x_init << 10, -10;
-
+    x_init << dist_x(gen), dist_y(gen);
+    problem.x0 = x_init;
     Eigen::VectorXd params(2);
     // Constants for the Rosenbrock function A = 1.0, B = 100.0
     params << 1.0, 100.0;
+    problem.params = params;
 
-    furiaoptimizer::Result result = default_solver.solve(rosenbrock, rosenbrock_gradient, params, x_init);
+    //Initialize logger
+    init_logger(options.log_file_folder_path);
+    spdlog::info("Application started");
+
+    //Initialize solver and solve the problem
+    furiaoptimizer::Solver default_solver(options, problem);
+    furiaoptimizer::Result result = default_solver.solve();
 
     std::cout << "Optimized parameters: " << result.x.transpose() << std::endl;
     std::cout << "Solver summary: " << std::endl;
