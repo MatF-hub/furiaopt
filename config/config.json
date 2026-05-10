@@ -1,0 +1,11 @@
+{
+  "max_iter": 5e4,
+  "gradient_tolerance": 1e-6,
+  "step_tolerance": 1e-10,
+  "function_tolerance": 1e-12,
+
+  "direction_method": "BFGS",
+  "globalization_method": "LineSearch",
+
+  "log_file_folder_path": "/home/matteo/optimizer_ws/logs/"
+}

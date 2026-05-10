@@ -1,8 +1,18 @@
 #include "unconstrained_solver.hpp"
+#include <spdlog/spdlog.h>
+#include <spdlog/sinks/basic_file_sink.h>
 
+inline std::string vec_to_string(const Eigen::VectorXd& v)
+{
+    std::ostringstream oss;
+    oss << v.transpose();
+    return oss.str();
+}
 namespace furiaoptimizer{
 
 Result Solver::solve(const CostFunc& f, const GradientFunc& g, const Eigen::VectorXd& params, const Eigen::VectorXd& x){
+
+    spdlog::info("Starting solve");
 
     Result result;
     result.summary.initial_cost = f(params, x);
@@ -12,10 +22,19 @@ Result Solver::solve(const CostFunc& f, const GradientFunc& g, const Eigen::Vect
     double Dx_i = std::numeric_limits<double>::infinity();
     double Df_i = std::numeric_limits<double>::infinity();
     Eigen::VectorXd x_i = x;
-    
+
     while (iter < options_.max_iter) {
 
         Eigen::VectorXd g_i = g(params, x_i);
+        double f_i = f(params, x_i);
+
+        spdlog::info(
+            "iter={},cost={:.8f},grad_norm={:.3e},x={}",
+            iter,
+            f_i,
+            g_i.norm(),
+            vec_to_string(x_i)
+        );
 
         auto direction = compute_direction(g_i);
 
@@ -29,7 +48,7 @@ Result Solver::solve(const CostFunc& f, const GradientFunc& g, const Eigen::Vect
         Eigen::VectorXd x_new = x_i + step_length * direction;
 
         Dx_i = (x_new - x_i).norm()/std::max(x_i.norm(), 1e-16);
-        Df_i = std::abs(f(params, x_new) - f(params, x_i))/std::max(std::abs(f(params, x_i)), 1e-16);
+        Df_i = std::abs(f(params, x_new) - f_i)/std::max(std::abs(f_i), 1e-16);
 
         x_i = x_new;
         iter++;

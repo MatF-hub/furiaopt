@@ -1,10 +1,35 @@
-#include <Eigen/Dense>
 #include "unconstrained_solver.hpp"
 #include <iostream>
 
 // The Rosenbrock function itself
 #include <Eigen/Dense>
 #include <cmath>
+
+//Config loader
+#include "config_loader.hpp"
+
+// Logger
+#include <spdlog/spdlog.h>
+#include <spdlog/sinks/basic_file_sink.h>
+#include <memory>
+
+void init_logger(const std::string& log_file_folder)
+{
+    auto logger = spdlog::basic_logger_mt(
+        "furia_optimizer_logger",
+        log_file_folder + "optimizer.log",
+        true // truncate = false append mode
+    );
+
+    logger->set_level(spdlog::level::info);
+
+    logger->set_pattern(
+        "[%Y-%m-%d %H:%M:%S.%e] [%l] %v"
+    );
+
+    spdlog::set_default_logger(logger);
+}
+
 
 double rosenbrock(const Eigen::VectorXd& params, const Eigen::VectorXd& x) {
     double a = params[0];
@@ -25,7 +50,12 @@ Eigen::VectorXd rosenbrock_gradient(const Eigen::VectorXd& params, const Eigen::
 
 int main()
 {
-    furiaoptimizer::Solver default_solver;
+    furiaoptimizer::SolverOptions options = furiaoptimizer::load_solver_options("/home/matteo/optimizer_ws/source/config/config.json");
+
+    init_logger(options.log_file_folder_path);
+    spdlog::info("Application started");
+
+    furiaoptimizer::Solver default_solver(options);
 
     Eigen::VectorXd x_init(2);
     x_init << 10, -10;
