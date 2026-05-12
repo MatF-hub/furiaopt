@@ -43,8 +43,50 @@ Result Solver::solve(){
     Result result;
     result.summary.initial_cost = problem_.cost_func(problem_.params, problem_.x0);
 
+    if (problem_.isQuadratic())
+    {
+        spdlog::info("Quadratic problem detected, using direct solver");
+        // For quadratic problems, we can directly compute the optimal solution by solving Qx + c = 0
+        Eigen::MatrixXd Q = problem_.Q_quadratic.value();
+        Eigen::VectorXd c = problem_.c_quadratic.value();
+        Eigen::LLT<Eigen::MatrixXd> llt(Q);
+        if (llt.info() == Eigen::Success) {
+            result.x = llt.solve(-c);
+        } else {
+            // If LLT fails, try LDLT decomposition, can handle both positive and negative semi definite Hessian
+            Eigen::LDLT<Eigen::MatrixXd> ldlt(Q);
+            if (ldlt.info() == Eigen::Success) {
+                result.x = ldlt.solve(-c);
+            } else {
+                throw std::runtime_error("Failed to solve quadratic problem: Hessian is not semi-positive definite");
+            }
+        }
+        result.summary.final_cost = problem_.cost_func(problem_.params, result.x);
+        result.summary.iterations = 0;
+        result.summary.converged = true;
+    }
+    else if (problem_.isLinear())
+    {
+        spdlog::info("Linear problem detected w/o constraints detected, checking for unboundedness");
+        // For linear problems, we can directly compute the optimal solution by solving c = 0
+        Eigen::VectorXd c = problem_.c_linear.value();
+        if (c.norm() > 1e-16) {
+            throw std::runtime_error("Unbounded cost function detected: for unconstrained optimization the cost function should be at least quadratic to have a well-defined minimum");
+        }
+    }
+    else
+    {
+        spdlog::info("Non-linear problem detected, using iterative solver");
+        non_linear_solver(result, problem_);
+    }
+
+    return result;
+};
+
+
+void Solver::non_linear_solver(Result& result, const Problem& problem_){
+
     int iter = 0;
-    double converged = false;
     double Dx_i = std::numeric_limits<double>::infinity();
     double Df_i = std::numeric_limits<double>::infinity();
     Eigen::VectorXd x_i = problem_.x0;
@@ -66,7 +108,6 @@ Result Solver::solve(){
         auto direction = direction_strategy_->getDirection(g_i, x_i);
 
         if ((g_i.transpose() * direction).norm() <= options_.gradient_tolerance || Dx_i <= options_.step_tolerance || Df_i <= options_.function_tolerance) {
-            converged = true;
             break;
         }
 
@@ -84,9 +125,7 @@ Result Solver::solve(){
     result.x = x_i;
     result.summary.iterations = iter;
     result.summary.final_cost = problem_.cost_func(problem_.params, x_i);
-    result.summary.converged = converged;
-    return result;
+    result.summary.converged = iter < options_.max_iter;
 };
-
 
 }

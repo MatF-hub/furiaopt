@@ -20,6 +20,7 @@ public:
 
     //Solve call
     Result solve();
+    void non_linear_solver(Result& result, const Problem& problem_);
 };
 
 }

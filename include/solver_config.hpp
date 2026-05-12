@@ -51,6 +51,7 @@ struct Problem{
     bool hasGradient() const { return gradient_func.has_value(); }
     bool hasHessian() const { return hessian_func.has_value(); }
     bool isQuadratic() const { return Q_quadratic.has_value() && c_quadratic.has_value(); }
+    bool isLinear() const { return !Q_quadratic.has_value() && c_quadratic.has_value(); }
     bool isLeastSquares() const { return residual_func.has_value(); }
 };
 
