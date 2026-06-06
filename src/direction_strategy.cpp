@@ -5,7 +5,7 @@ namespace furiaoptimizer{
 Eigen::VectorXd ExactHessianDirection::getDirection(const Eigen::VectorXd& gradient, const Eigen::VectorXd& x_i)
 {
     //Try LLT decomposition first, requires positive definite Hessian
-    Eigen::MatrixXd hessian = problem_.hessian_func.value()(x_i);
+    Eigen::MatrixXd hessian = problem_.get().hessian_func.value()(x_i);
     llt_.compute(hessian);
     if (llt_.info() == Eigen::Success) {
         return llt_.solve(-gradient);
@@ -21,26 +21,24 @@ Eigen::VectorXd ExactHessianDirection::getDirection(const Eigen::VectorXd& gradi
 
 Eigen::VectorXd GaussNewtonDirection::getDirection(const Eigen::VectorXd& gradient, const Eigen::VectorXd& x_i)
 {
-    if (problem_.isLeastSquares())
-    {
-        Eigen::MatrixXd gradient_residual_vector = problem_.gradient_residual_func.value()(x_i);
-        Eigen::VectorXd residual_vector = problem_.residual_func.value()(x_i);
+        Eigen::MatrixXd gradient_residual_vector = problem_.get().gradient_residual_func.value()(x_i);
+        Eigen::VectorXd residual_vector = problem_.get().residual_func(x_i);
 
         Eigen::MatrixXd JtJ = gradient_residual_vector * gradient_residual_vector.transpose(); // n×n
         Eigen::MatrixXd approximate_hessian =  2 * JtJ + sigma_ * Eigen::MatrixXd::Identity(JtJ.rows(), JtJ.rows());
 
         llt_.compute(approximate_hessian);
         if (llt_.info() == Eigen::Success) {
-            return llt_.solve(-gradient); // Notice that gradient == gradient_residual_vector * residual_vector
+            return llt_.solve(-gradient); // Notice that gradient == 2 * gradient_residual_vector * residual_vector
         }
         //If LLT fails, try LDLT decomposition, can handle both positive and negative semi definite Hessian
         ldlt_.compute(approximate_hessian);
         if (ldlt_.info() == Eigen::Success) {
-            return ldlt_.solve(-gradient); // Notice that gradient == gradient_residual_vector * residual_vector
+            return ldlt_.solve(-gradient); // Notice that gradient == 2 * gradient_residual_vector * residual_vector
         }
-    }
+    
     //If both decompositions fail, fallback to gradient descent direction
-    return -gradient; // Notice that gradient == gradient_residual_vector * residual_vector
+    return - gradient; // Notice that gradient == 2 * gradient_residual_vector * residual_vector
 };
 
 Eigen::VectorXd BFGSDirection::getDirection(const Eigen::VectorXd& g_k_plus_1, const Eigen::VectorXd& x_k_plus_1)

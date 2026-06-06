@@ -23,9 +23,6 @@ inline DirectionMethod parse_direction_method(
     if (s == "GradientDescent")
         return DirectionMethod::GradientDescent;
 
-    if (s == "GaussNewton")
-        return DirectionMethod::GaussNewton;
-
     if (s == "BFGS")
         return DirectionMethod::BFGS;
 

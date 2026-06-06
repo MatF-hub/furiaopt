@@ -9,34 +9,25 @@ namespace furiaoptimizer{
 class DirectionStrategy {
 
 protected:
-    Problem problem_;
+    std::reference_wrapper<const NLPProblem> problem_;
 
     //Not used by gradient descent, but used by all other class that inherit from DirectionStrategy, so we can just put them here to avoid code duplication.
     Eigen::LLT<Eigen::MatrixXd> llt_;
     Eigen::LDLT<Eigen::MatrixXd> ldlt_;
     
 public:
-    DirectionStrategy(const Problem& problem) : problem_(problem){};
+    DirectionStrategy(const NLPProblem& problem) : problem_(std::cref(problem)){};
     virtual Eigen::VectorXd getDirection(const Eigen::VectorXd& gradient, const Eigen::VectorXd& x_i) = 0;
     virtual ~DirectionStrategy() = default;
 };
 
 class GradientDescentDirection : public DirectionStrategy {
 public:
-    GradientDescentDirection(const Problem& problem) : DirectionStrategy(problem){};
+    GradientDescentDirection(const NLPProblem& problem) : DirectionStrategy(problem){};
 
     Eigen::VectorXd getDirection(const Eigen::VectorXd& gradient, const Eigen::VectorXd& x_i) override {
         return -gradient;
     };
-};
-
-class GaussNewtonDirection : public DirectionStrategy {
-
-    double sigma_ = 1e-10; // Damping factor for Gauss-Newton method
-public:
-    GaussNewtonDirection(const Problem& problem) : DirectionStrategy(problem){};
-
-    Eigen::VectorXd getDirection(const Eigen::VectorXd& gradient, const Eigen::VectorXd& x_i) override;
 };
 
 class BFGSDirection : public DirectionStrategy {
@@ -46,7 +37,7 @@ class BFGSDirection : public DirectionStrategy {
     Eigen::VectorXd g_k_; // Gradient at previous iterate
     double gamma_ = 0.2; // Powell Damping factor for BFGS method
 public:
-    BFGSDirection(const Problem& problem) : DirectionStrategy(problem)
+    BFGSDirection(const NLPProblem& problem) : DirectionStrategy(problem)
     {
         //Here we can understand dimensions of the problem and initialize H_k_plus_1_, x_k_ and g_k_ accordingly.
         int problem_size = problem.x0.size();
@@ -59,7 +50,7 @@ public:
 class ExactHessianDirection : public DirectionStrategy {
 
 public:
-    ExactHessianDirection(const Problem& problem) : DirectionStrategy(problem){
+    ExactHessianDirection(const NLPProblem& problem) : DirectionStrategy(problem){
         if (!problem.hasHessian()) {
             throw std::invalid_argument("Hessian function must be provided for ExactHessianDirection");
         };
@@ -67,6 +58,19 @@ public:
 
     Eigen::VectorXd getDirection(const Eigen::VectorXd& gradient, const Eigen::VectorXd& x_i) override;
     
+};
+
+class GaussNewtonDirection {
+
+    private:
+        std::reference_wrapper<const LSProblem> problem_;
+        Eigen::LLT<Eigen::MatrixXd> llt_;
+        Eigen::LDLT<Eigen::MatrixXd> ldlt_;
+        double sigma_ = 1e-10; // Damping factor for Gauss-Newton method
+public:
+    GaussNewtonDirection(const LSProblem& problem): problem_(problem){};
+
+    Eigen::VectorXd getDirection(const Eigen::VectorXd& gradient, const Eigen::VectorXd& x_i);
 };
 
 }

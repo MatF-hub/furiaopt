@@ -1,4 +1,4 @@
-#include "unconstrained_solver.hpp"
+#include "solvers/unconstrained_solver.hpp"
 #include <iostream>
 
 // The Rosenbrock function itself
@@ -77,7 +77,7 @@ int main()
     params << 1.0, 100.0;
 
     //Setup problem to solve
-    furiaoptimizer::Problem problem;
+    furiaoptimizer::NLPProblem problem;
     problem.cost_func = [params](const Eigen::VectorXd& x) {
         return rosenbrock(params, x);
     };

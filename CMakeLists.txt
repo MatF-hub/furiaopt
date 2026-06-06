@@ -36,7 +36,9 @@ find_package(nlohmann_json CONFIG REQUIRED)
 # =====================================================
 
 add_library(furiaoptimizer
-    src/unconstrained_solver.cpp
+    src/solvers/unconstrained_solver.cpp
+    src/solvers/lp_solver.cpp
+    src/solvers/qp_solver.cpp
     src/direction_strategy.cpp
 )
 

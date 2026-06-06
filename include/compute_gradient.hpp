@@ -7,10 +7,23 @@
 namespace furiaoptimizer
 {
 
-    inline Eigen::VectorXd compute_gradient(const Problem& problem, const Eigen::VectorXd& x)
+    inline Eigen::VectorXd compute_gradient(const NLPProblem& problem, const Eigen::VectorXd& x)
     {
         if (problem.hasGradient()){
             return problem.gradient_func.value()(x);
+        }
+        else
+        {
+            //Finite difference approximation path for the gradient
+        }
+        throw std::runtime_error("Unable to compute gradient: no analytic gradient provided and finite difference approximation not implemented");
+    }
+
+    inline Eigen::VectorXd compute_gradient(const LSProblem& problem, const Eigen::VectorXd& x)
+    {
+        if (problem.hasGradientResidualFunc()){
+            Eigen::MatrixXd J = problem.gradient_residual_func.value()(x);
+            return 2 * J * problem.residual_func(x);
         }
         else
         {

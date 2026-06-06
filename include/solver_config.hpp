@@ -8,7 +8,6 @@ namespace furiaoptimizer
 
 enum class DirectionMethod {
     GradientDescent,
-    GaussNewton,
     BFGS,
     ExactNewton
 };
@@ -27,52 +26,72 @@ struct SolverOptions{
     std::string log_file_folder_path;
 };
 
-struct Problem{
-    
+
+struct LinearConstraints {
+
+    std::optional<Eigen::MatrixXd> A; // Coefficients for linear equality constraints
+    std::optional<Eigen::VectorXd> b; // Constants for linear equality constraints
+    std::optional<Eigen::MatrixXd> C; // Coefficients for linear inequality constraints
+    std::optional<Eigen::VectorXd> d; // Constants for linear inequality constraints
+
+    bool hasEqualityConstraints() const { return A.has_value() && b.has_value(); }
+    bool hasInequalityConstraints() const { return C.has_value() && d.has_value(); }
+};
+
+// For Linear Programming: min f(x) = c^T*x
+//                         s.t Ax + b = 0   (equality constraints)
+//                         Cx + d >= 0      (inequality constraints)
+struct LPProblem: public LinearConstraints{
     Eigen::VectorXd x0;
-    CostFunc cost_func;
+    Eigen::VectorXd c; // Linear term
 
-    //Use it for Newton/Quasi-Newton methods.
-    std::optional<GradientFunc> gradient_func;
-    std::optional<HessianFunc> hessian_func;
+};
 
-    //Use it for Gauss-Newton methods. The cost function is defined as f(x) = 0.5 * F(x)^T*F(x), where F(x) is a column vector of functions.
-    std::optional<ResidualFunc> residual_func;
-    std::optional<GradientResidualFunc> gradient_residual_func;
-    
-    // For Quadratic Programming: f(x) = 0.5 * x'Hx + c'x
-    std::optional<Eigen::MatrixXd> H_quadratic; // Hessian (constant)
-    std::optional<Eigen::VectorXd> c_quadratic; // Linear term
+// For Quadratic Programming: min f(x) = 0.5 * x'Hx + c'x
+//                         s.t Ax + b = 0   (equality constraints)
+//                         Cx + d >= 0      (inequality constraints)
+struct QPProblem: public LinearConstraints {
+    Eigen::VectorXd x0;
+    Eigen::MatrixXd H; // Quadratic term
+    Eigen::VectorXd c; // Linear term
+};
 
-    // For Linear Programming: f(x) = c^T*x
-    std::optional<Eigen::VectorXd> c_linear; // Linear term
-
-    // Equality constraints: g(x) = 0
+struct NonLinearConstraints {
+    // equality constraints: g(x) = 0
     // Notice linear equality constrainst are rapresented as g(x) = Ax + b = 0
     std::optional<EqualityConstraintFunc> equality_constraint_func;
     std::optional<JacobianEqualityConstraintFunc> jacobian_equality_constraint_func;
-    std::optional<bool> is_equality_constraint_linear; // Optional flag to indicate if the equality constraint is linear, used for catching
 
     // Inequality constraints: h(x) >= 0
     // Notice linear Inequality constrainst are rapresented as h(x) = Cx + d >= 0
     std::optional<InequalityConstraintFunc> inequality_constraint_func;
     std::optional<JacobianInequalityConstraintFunc> jacobian_inequality_constraint_func;
-    std::optional<bool> is_inequality_constraint_linear; // Optional flag to indicate if the inequality constraint is linear, used for catching
+
+    bool hasEqualityConstraints() const { return equality_constraint_func.has_value(); }
+    bool hasInequalityConstraints() const { return inequality_constraint_func.has_value(); }
+};
+
+//Use it for Gauss-Newton methods. The cost function is defined as f(x) = 0.5 * F(x)^T*F(x), where F(x) is a column vector of functions.
+struct LSProblem : public NonLinearConstraints {
+    Eigen::VectorXd x0;
+    ResidualFunc residual_func;
+    std::optional<GradientResidualFunc> gradient_residual_func;
+
+    bool hasGradientResidualFunc() const { return gradient_residual_func.has_value(); }
+};
+
+//Use it for Newton/Quasi-Newton methods. where the cost function is a generic non linear function f(x).
+struct NLPProblem : public NonLinearConstraints {
+    
+    Eigen::VectorXd x0;
+    CostFunc cost_func;
+
+    std::optional<GradientFunc> gradient_func;
+    std::optional<HessianFunc> hessian_func;
 
     bool hasGradient() const { return gradient_func.has_value(); }
     bool hasHessian() const { return hessian_func.has_value(); }
-    bool isQuadratic() const { return H_quadratic.has_value() && c_quadratic.has_value(); }
-    bool isLinear() const { return !H_quadratic.has_value() && c_linear.has_value(); }
-    bool isLeastSquares() const { return residual_func.has_value(); }
-    bool hasConstraints() const { return equality_constraint_func.has_value() || inequality_constraint_func.has_value(); }
-    bool hasOnlyLinearConstraints() const {
-        if (equality_constraint_func.has_value()) 
-            if (!is_equality_constraint_linear.has_value()) return false;
-        else if (inequality_constraint_func.has_value()) 
-            if (!is_inequality_constraint_linear.has_value()) return false;
-        else 
-            return true;
-    }
+
 };
 
 struct SolverSummary {
