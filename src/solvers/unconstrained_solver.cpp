@@ -106,7 +106,18 @@ Result UnconstrainedSolver::solve(){
 
         auto direction = get_direction_func_(g_i, x_i);
 
-        if ((g_i.transpose() * direction).norm() <= options_.get().gradient_tolerance || Dx_i <= options_.get().step_tolerance || Df_i <= options_.get().function_tolerance) {
+        if (Dx_i <= options_.get().step_tolerance) {
+            result.summary.termination_reason = TerminationReason::StepTolerance;
+            break;
+        }
+        if (Df_i <= options_.get().function_tolerance)
+        {
+            result.summary.termination_reason = TerminationReason::FunctionTolerance;
+            break;
+        }
+        if ((g_i.transpose() * direction).norm() <= options_.get().gradient_tolerance)
+        {
+            result.summary.termination_reason = TerminationReason::GradientTolerance;
             break;
         }
 
@@ -124,7 +135,11 @@ Result UnconstrainedSolver::solve(){
     result.x = x_i;
     result.summary.iterations = iter;
     result.summary.final_cost = cost_func_(x_i);
+    result.summary.final_gradient_norm = gradient_func_(x_i).norm();
     result.summary.converged = iter < options_.get().max_iter;
+    if (!result.summary.converged) {
+        result.summary.termination_reason = TerminationReason::MaxIterations;
+    }
 
     return result;
 };

@@ -94,11 +94,20 @@ struct NLPProblem : public NonLinearConstraints {
 
 };
 
+enum class TerminationReason {
+    MaxIterations,
+    GradientTolerance,
+    StepTolerance,
+    FunctionTolerance
+};
+
 struct SolverSummary {
     int iterations = 0;
     double initial_cost = 0.0;
     double final_cost = 0.0;
+    double final_gradient_norm = 0.0;
     bool converged = false;
+    TerminationReason termination_reason;
 };
 
 struct Result {
