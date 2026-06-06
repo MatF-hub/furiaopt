@@ -53,7 +53,7 @@ inline double compute_step_length(const SolverOptions& options, const CostFunc& 
     else if (options.globalization_method == GlobalizationMethod::TrustRegion)
     {
         // Prototype placeholder
-        throw std::runtime_error("TrustRegion not yet implemented")
+        throw std::runtime_error("TrustRegion not yet implemented");
     }
     else
     {

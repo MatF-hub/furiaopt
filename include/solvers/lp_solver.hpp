@@ -22,7 +22,6 @@ public:
     Result solve();
 
 private:
-    void equality_constrained_LP_solver(Result& result);
     void general_LP_solver(Result& result);
 };
 

@@ -70,15 +70,13 @@ target_compile_options(furiaoptimizer
 # =====================================================
 
 if(FURIAOPTIMIZER_BUILD_EXAMPLES)
+    #Executable for the Rosenbrock NLP example
+    add_executable(rosenbrock_example examples/rosenbrock.cpp)
+    target_link_libraries(rosenbrock_example PRIVATE furiaoptimizer spdlog::spdlog)
 
-    add_executable(furiaoptimizer_examples
-        examples/rosenbrock.cpp
-    )
-
-    target_link_libraries(furiaoptimizer_examples
-        PRIVATE FuriaOptimizer::furiaoptimizer Eigen3::Eigen
-    )
-
+    #Executable for the Robot Force Balance QP example
+    add_executable(qp_balance_example examples/qp_robot_balance.cpp)
+    target_link_libraries(qp_balance_example PRIVATE furiaoptimizer spdlog::spdlog)
 endif()
 
 # =====================================================
