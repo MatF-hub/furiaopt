@@ -45,7 +45,7 @@ Result ConstrainedSolver::solve(){
 
     spdlog::info("Starting solve");
     Result result;
-    result.summary.initial_cost = problem_.cost_func(problem_.params, problem_.x0);
+    result.summary.initial_cost = problem_.cost_func(problem_.x0);
 
     if (problem_.isQuadratic() && problem_.hasOnlyLinearConstraints())
     {
@@ -80,8 +80,8 @@ void ConstrainedSolver::SQP_solver(Result& result, const Problem& problem_){
 
     while (iter < options_.max_iter) {
         Eigen::VectorXd grad_f = compute_gradient(problem_, x_i);
-        Eigen::MatrixXd grad_eq = problem_.jacobian_equality_constraints_func.value()(problem_.params, x_i);
-        Eigen::MatrixXd grad_ineq = problem_.jacobian_inequality_constraints_func.value()(problem_.params, x_i);
+        Eigen::MatrixXd grad_eq = problem_.jacobian_equality_constraints_func.value()(x_i);
+        Eigen::MatrixXd grad_ineq = problem_.jacobian_inequality_constraints_func.value()(x_i);
 
         iter++;
     }
@@ -96,8 +96,8 @@ void ConstrainedSolver::QP_solver(Result& result, const Problem& problem_){
     Eigen::VectorXd b;
     //Sizes are automatically handled by Eigen, we just need to make sure that the user provides consistent dimensions in the problem definition
     if (problem_.equality_constraint_func.has_value()) {
-        A = problem_.jacobian_equality_constraint_func.value()(problem_.params, x_i);
-        b = problem_.equality_constraint_func.value()(problem_.params, Eigen::VectorXd::Zero(x_i.size()));
+        A = problem_.jacobian_equality_constraint_func.value()(x_i);
+        b = problem_.equality_constraint_func.value()(Eigen::VectorXd::Zero(x_i.size()));
     }
     if (!problem_.inequality_constraint_func.has_value()) {
         // KKT conditions for equality constrained QP can be solved by solving the linear system:
@@ -116,7 +116,7 @@ void ConstrainedSolver::QP_solver(Result& result, const Problem& problem_){
         Eigen::VectorXd x = sol.head(n);
         Eigen::VectorXd lambda = sol.tail(m_eq);
         result.x = x;
-        result.summary.final_cost = problem_.cost_func(problem_.params, result.x);
+        result.summary.final_cost = problem_.cost_func(result.x);
         result.summary.iterations = 0;
         result.summary.converged = lu.isInvertible();
         return;
@@ -125,8 +125,8 @@ void ConstrainedSolver::QP_solver(Result& result, const Problem& problem_){
     Eigen::MatrixXd C;
     Eigen::VectorXd d;
     if (problem_.inequality_constraint_func.has_value()) {
-        C = problem_.jacobian_inequality_constraint_func.value()(problem_.params, x_i);
-        d = problem_.inequality_constraint_func.value()(problem_.params, Eigen::VectorXd::Zero(x_i.size()));
+        C = problem_.jacobian_inequality_constraint_func.value()(x_i);
+        d = problem_.inequality_constraint_func.value()(Eigen::VectorXd::Zero(x_i.size()));
 
         // Define Auxiliary LP problem to find a feasible starting point for the interior point method:
         // min sum(s)
@@ -135,12 +135,11 @@ void ConstrainedSolver::QP_solver(Result& result, const Problem& problem_){
         // s >= 0
         int problem_size = x_i.size() + d.size();
         Problem aux_problem;
-        aux_problem.params = Eigen::VectorXd::Zero(d.size()); // No parameters needed for the auxiliary problem
         aux_problem.x0 = Eigen::VectorXd::Ones(problem_size); // Start with a strictly positive slack variable
         aux_problem.c_linear = Eigen::VectorXd::Ones(d.size()); // Objective is to minimize the sum of slacks
-        aux_problem.cost_func = [](const Eigen::VectorXd& params, const Eigen::VectorXd& z) {
-            int n = z.size() - params.size(); // Original variable size
-            Eigen::VectorXd s = z.tail(params.size());
+        aux_problem.cost_func = [d](const Eigen::VectorXd& z) {
+            int n = z.size() - d.size(); // Original variable size
+            Eigen::VectorXd s = z.tail(d.size());
             return s.sum();
         };
 
@@ -152,16 +151,16 @@ void ConstrainedSolver::QP_solver(Result& result, const Problem& problem_){
         Eigen::MatrixXd C_bar;
         C_bar << Eigen::MatrixXd::Zero(C.rows(), problem_size), 
                  Eigen::MatrixXd::Zero(C.rows(), C.cols()), Eigen::MatrixXd::Ones(d.size(), d.size());
-        aux_problem.equality_constraint_func = [A_bar, b_bar](const Eigen::VectorXd& params, const Eigen::VectorXd& z) {
+        aux_problem.equality_constraint_func = [A_bar, b_bar](const Eigen::VectorXd& z) {
             return A_bar * z + b_bar;
         };
-        aux_problem.jacobian_equality_constraint_func = [A_bar](const Eigen::VectorXd& params, const Eigen::VectorXd& z) {
+        aux_problem.jacobian_equality_constraint_func = [A_bar](const Eigen::VectorXd& z) {
             return A_bar;
         };
-        aux_problem.inequality_constraint_func = [C_bar](const Eigen::VectorXd& params, const Eigen::VectorXd& z) {
+        aux_problem.inequality_constraint_func = [C_bar](const Eigen::VectorXd& z) {
             return C_bar * z;
         };
-        aux_problem.jacobian_inequality_constraint_func = [C_bar](const Eigen::VectorXd& params, const Eigen::VectorXd& z) {
+        aux_problem.jacobian_inequality_constraint_func = [C_bar](const Eigen::VectorXd& z) {
             return C_bar;
         };
         Result aux_result;
@@ -183,10 +182,10 @@ void ConstrainedSolver::LP_solver(Result& result, const Problem& problem_) {
 
     // 1. Setup Dimensions
     const int n = problem_.x0.size();
-    const Eigen::MatrixXd A = problem_.jacobian_equality_constraint_func.value()(problem_.params, problem_.x0);
-    const Eigen::VectorXd b = problem_.equality_constraint_func.value()(problem_.params, Eigen::VectorXd::Zero(n));
-    const Eigen::MatrixXd C = problem_.jacobian_inequality_constraint_func.value()(problem_.params, problem_.x0);
-    const Eigen::VectorXd d = problem_.inequality_constraint_func.value()(problem_.params, Eigen::VectorXd::Zero(n));
+    const Eigen::MatrixXd A = problem_.jacobian_equality_constraint_func.value()(problem_.x0);
+    const Eigen::VectorXd b = problem_.equality_constraint_func.value()(Eigen::VectorXd::Zero(n));
+    const Eigen::MatrixXd C = problem_.jacobian_inequality_constraint_func.value()(problem_.x0);
+    const Eigen::VectorXd d = problem_.inequality_constraint_func.value()(Eigen::VectorXd::Zero(n));
     const Eigen::VectorXd c = problem_.c_linear.value();
 
     const int m_eq = A.rows();
@@ -275,7 +274,7 @@ void ConstrainedSolver::LP_solver(Result& result, const Problem& problem_) {
     }
     
     result.x = x;
-    result.summary.final_cost = problem_.cost_func(problem_.params, result.x);
+    result.summary.final_cost = problem_.cost_func(result.x);
     result.summary.iterations = iter;
     result.summary.converged = iter < max_iter;
 }

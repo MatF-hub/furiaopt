@@ -6,7 +6,7 @@
 
 namespace furiaoptimizer {
 
-inline double compute_step_length(const SolverOptions& options, const CostFunc& f, const Eigen::VectorXd& g, const Eigen::VectorXd& params, const Eigen::VectorXd& x, const Eigen::VectorXd& direction)
+inline double compute_step_length(const SolverOptions& options, const CostFunc& f, const Eigen::VectorXd& g, const Eigen::VectorXd& x, const Eigen::VectorXd& direction)
 {
     if (options.globalization_method == GlobalizationMethod::LineSearch)
     {
@@ -20,7 +20,7 @@ inline double compute_step_length(const SolverOptions& options, const CostFunc& 
         double alpha = 1.0;
 
         // Current cost
-        const double fx = f(params, x);
+        const double fx = f(x);
 
         // Directional derivative
         const double slope0 = g.dot(direction);
@@ -35,7 +35,7 @@ inline double compute_step_length(const SolverOptions& options, const CostFunc& 
         {
             Eigen::VectorXd x_trial = x + alpha * direction;
 
-            double f_trial = f(params, x_trial);
+            double f_trial = f(x_trial);
 
             // Armijo condition:
             // f(x + alpha p) <= f(x) + c1 alpha g^T p

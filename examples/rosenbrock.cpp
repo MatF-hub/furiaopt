@@ -70,11 +70,24 @@ int main()
     //Setup solver options
     furiaoptimizer::SolverOptions options = furiaoptimizer::load_solver_options("config/config.json");
 
+    // Constants for the Rosenbrock function A = 1.0, B = 100.0
+    double A_param = 1.0;
+    double B_param = 100.0;
+    Eigen::VectorXd params(2);
+    params << 1.0, 100.0;
+
     //Setup problem to solve
     furiaoptimizer::Problem problem;
-    problem.cost_func = rosenbrock;
-    problem.gradient_func = rosenbrock_gradient;
-    problem.hessian_func = rosenbrock_hessian;
+    problem.cost_func = [params](const Eigen::VectorXd& x) {
+        return rosenbrock(params, x);
+    };
+    problem.gradient_func = [params](const Eigen::VectorXd& x) {
+        return rosenbrock_gradient(params, x);
+    };
+    problem.hessian_func = [params](const Eigen::VectorXd& x) {
+        return rosenbrock_hessian(params, x);
+    };
+
     // Setup the random number generator for random initialziation
     std::random_device rd;
     std::mt19937 gen(rd());
@@ -83,17 +96,13 @@ int main()
     Eigen::VectorXd x_init(2);
     x_init << dist_x(gen), dist_y(gen);
     problem.x0 = x_init;
-    Eigen::VectorXd params(2);
-    // Constants for the Rosenbrock function A = 1.0, B = 100.0
-    params << 1.0, 100.0;
-    problem.params = params;
 
     //Initialize logger
     init_logger(options.log_file_folder_path);
     spdlog::info("Application started");
 
     //Initialize solver and solve the problem
-    furiaoptimizer::Solver default_solver(options, problem);
+    furiaoptimizer::UnconstrainedSolver default_solver(options, problem);
     furiaoptimizer::Result result = default_solver.solve();
 
     std::cout << "Optimized parameters: " << result.x.transpose() << std::endl;

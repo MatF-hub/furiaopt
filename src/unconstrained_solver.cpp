@@ -45,7 +45,7 @@ Result UnconstrainedSolver::solve(){
 
     spdlog::info("Starting solve");
     Result result;
-    result.summary.initial_cost = problem_.cost_func(problem_.params, problem_.x0);
+    result.summary.initial_cost = problem_.cost_func(problem_.x0);
 
     if (problem_.isQuadratic())
     {
@@ -65,7 +65,7 @@ Result UnconstrainedSolver::solve(){
                 throw std::runtime_error("Failed to solve quadratic problem: Hessian is not semi-positive definite");
             }
         }
-        result.summary.final_cost = problem_.cost_func(problem_.params, result.x);
+        result.summary.final_cost = problem_.cost_func(result.x);
         result.summary.iterations = 0;
         result.summary.converged = true;
     }
@@ -99,7 +99,7 @@ void UnconstrainedSolver::non_linear_solver(Result& result, const Problem& probl
 
         Eigen::VectorXd g_i = compute_gradient(problem_, x_i);
 
-        double f_i = problem_.cost_func(problem_.params, x_i);
+        double f_i = problem_.cost_func(x_i);
 
         spdlog::info(
             "iter={},cost={:.8f},grad_norm={:.3e},x={}",
@@ -115,12 +115,12 @@ void UnconstrainedSolver::non_linear_solver(Result& result, const Problem& probl
             break;
         }
 
-        auto step_length = compute_step_length(options_, problem_.cost_func, g_i, problem_.params, x_i, direction);
+        auto step_length = compute_step_length(options_, problem_.cost_func, g_i, x_i, direction);
 
         Eigen::VectorXd x_new = x_i + step_length * direction;
 
         Dx_i = (x_new - x_i).norm()/std::max(x_i.norm(), 1e-16);
-        Df_i = std::abs(problem_.cost_func(problem_.params, x_new) - f_i)/std::max(std::abs(f_i), 1e-16);
+        Df_i = std::abs(problem_.cost_func(x_new) - f_i)/std::max(std::abs(f_i), 1e-16);
 
         x_i = x_new;
         iter++;
@@ -128,7 +128,7 @@ void UnconstrainedSolver::non_linear_solver(Result& result, const Problem& probl
 
     result.x = x_i;
     result.summary.iterations = iter;
-    result.summary.final_cost = problem_.cost_func(problem_.params, x_i);
+    result.summary.final_cost = problem_.cost_func(x_i);
     result.summary.converged = iter < options_.max_iter;
 };
 

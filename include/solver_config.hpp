@@ -29,7 +29,6 @@ struct SolverOptions{
 
 struct Problem{
     
-    Eigen::VectorXd params;
     Eigen::VectorXd x0;
     CostFunc cost_func;
 
