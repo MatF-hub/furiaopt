@@ -7,7 +7,7 @@
 namespace furiaoptimizer{
 
 
-class Solver{
+class UnconstrainedSolver{
 
     SolverOptions options_;
     Problem problem_;
@@ -16,10 +16,12 @@ class Solver{
 public:
 
     //Constructor that takes the solver options and the problem structure
-    Solver(const SolverOptions& options, const Problem& problem);
+    UnconstrainedSolver(const SolverOptions& options, const Problem& problem);
 
     //Solve call
     Result solve();
+
+private:
     void non_linear_solver(Result& result, const Problem& problem_);
 };
 

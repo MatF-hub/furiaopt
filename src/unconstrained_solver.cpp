@@ -12,9 +12,13 @@ inline std::string vec_to_string(const Eigen::VectorXd& v)
 }
 namespace furiaoptimizer{
 
-Solver::Solver(const SolverOptions& options, const Problem& problem){
+UnconstrainedSolver::UnconstrainedSolver(const SolverOptions& options, const Problem& problem){
     options_ = options;
     problem_ = problem;
+
+    if (problem_.hasConstraints()) {
+        throw std::invalid_argument("Constraints are present in the problem, please use the ConstrainedSolver instead of UnconstrainedSolver");
+    }
 
     // Initialize the direction strategy based on the selected method
     switch (options_.direction_method) {
@@ -37,7 +41,7 @@ Solver::Solver(const SolverOptions& options, const Problem& problem){
     }
 };
 
-Result Solver::solve(){
+Result UnconstrainedSolver::solve(){
 
     spdlog::info("Starting solve");
     Result result;
@@ -46,15 +50,15 @@ Result Solver::solve(){
     if (problem_.isQuadratic())
     {
         spdlog::info("Quadratic problem detected, using direct solver");
-        // For quadratic problems, we can directly compute the optimal solution by solving Qx + c = 0
-        Eigen::MatrixXd Q = problem_.Q_quadratic.value();
+        // For quadratic problems, we can directly compute the optimal solution by solving Hx + c = 0
+        Eigen::MatrixXd H = problem_.H_quadratic.value();
         Eigen::VectorXd c = problem_.c_quadratic.value();
-        Eigen::LLT<Eigen::MatrixXd> llt(Q);
+        Eigen::LLT<Eigen::MatrixXd> llt(H);
         if (llt.info() == Eigen::Success) {
             result.x = llt.solve(-c);
         } else {
             // If LLT fails, try LDLT decomposition, can handle both positive and negative semi definite Hessian
-            Eigen::LDLT<Eigen::MatrixXd> ldlt(Q);
+            Eigen::LDLT<Eigen::MatrixXd> ldlt(H);
             if (ldlt.info() == Eigen::Success) {
                 result.x = ldlt.solve(-c);
             } else {
@@ -84,7 +88,7 @@ Result Solver::solve(){
 };
 
 
-void Solver::non_linear_solver(Result& result, const Problem& problem_){
+void UnconstrainedSolver::non_linear_solver(Result& result, const Problem& problem_){
 
     int iter = 0;
     double Dx_i = std::numeric_limits<double>::infinity();

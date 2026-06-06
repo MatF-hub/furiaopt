@@ -5,7 +5,7 @@ namespace furiaoptimizer{
 Eigen::VectorXd ExactHessianDirection::getDirection(const Eigen::VectorXd& gradient, const Eigen::VectorXd& x_i)
 {
     //Try LLT decomposition first, requires positive definite Hessian
-    Eigen::MatrixXd hessian = problem_.hessian_func.value()(problem_.params, problem_.x0);
+    Eigen::MatrixXd hessian = problem_.hessian_func.value()(problem_.params, x_i);
     llt_.compute(hessian);
     if (llt_.info() == Eigen::Success) {
         return llt_.solve(-gradient);
@@ -25,8 +25,10 @@ Eigen::VectorXd GaussNewtonDirection::getDirection(const Eigen::VectorXd& gradie
     {
         Eigen::MatrixXd gradient_residual_vector = problem_.gradient_residual_func.value()(problem_.params, x_i);
         Eigen::VectorXd residual_vector = problem_.residual_func.value()(problem_.params, x_i);
-        Eigen::MatrixXd approximate_hessian = 2 * gradient_residual_vector * gradient_residual_vector.transpose() 
-        + sigma_ * Eigen::MatrixXd::Identity(gradient_residual_vector.cols(), gradient_residual_vector.cols());
+
+        Eigen::MatrixXd JtJ = gradient_residual_vector * gradient_residual_vector.transpose(); // n×n
+        Eigen::MatrixXd approximate_hessian =  2 * JtJ + sigma_ * Eigen::MatrixXd::Identity(JtJ.rows(), JtJ.rows());
+
         llt_.compute(approximate_hessian);
         if (llt_.info() == Eigen::Success) {
             return llt_.solve(-gradient); // Notice that gradient == gradient_residual_vector * residual_vector
@@ -60,6 +62,7 @@ Eigen::VectorXd BFGSDirection::getDirection(const Eigen::VectorXd& g_k_plus_1, c
     double sTy = yTs;
     if (yTs <= gamma_sTHs){
         y = y + (gamma_sTHs - sTy)*(H_k_*s - y)/(sTHs-sTy);
+        sTy = y.dot(s);  // recompute after damping
     }
 
     H_k_ = H_k_ + (y * y.transpose()) / (sTy) - (H_k_ * s * s.transpose() * H_k_) / sTHs;
