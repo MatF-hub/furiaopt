@@ -7,7 +7,7 @@
 namespace furiaoptimizer
 {
 
-    Eigen::VectorXd compute_gradient(const Problem& problem, const Eigen::VectorXd& x)
+    inline Eigen::VectorXd compute_gradient(const Problem& problem, const Eigen::VectorXd& x)
     {
         if (problem.hasGradient()){
             return problem.gradient_func.value()(problem.params, x);
