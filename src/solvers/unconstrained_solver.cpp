@@ -104,8 +104,6 @@ Result UnconstrainedSolver::solve(){
             vec_to_string(x_i)
         );
 
-        auto direction = get_direction_func_(g_i, x_i);
-
         if (Dx_i <= options_.get().step_tolerance) {
             result.summary.termination_reason = TerminationReason::StepTolerance;
             break;
@@ -115,6 +113,8 @@ Result UnconstrainedSolver::solve(){
             result.summary.termination_reason = TerminationReason::FunctionTolerance;
             break;
         }
+                
+        auto direction = get_direction_func_(g_i, x_i);
         if ((g_i.transpose() * direction).norm() <= options_.get().gradient_tolerance)
         {
             result.summary.termination_reason = TerminationReason::GradientTolerance;
