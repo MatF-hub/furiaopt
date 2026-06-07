@@ -152,7 +152,18 @@ void QPSolver::general_QP_solver(Result& result)
     KKT.block(0, n, n, m_eq) = -A.transpose();
     KKT.block(n, 0, m_eq, n) = A;
 
-    for (int outer = 0; outer < max_outer; ++outer) {
+    int outer = 0;
+    while (outer < max_outer) {
+        
+        spdlog::info(
+            "iter={},cost={:.8f},equality_constraint={:.3e},inequality_constraint={:.3e},x={}",
+            outer,
+            cost_func_(x),
+            (A * x + b).norm(),
+            (C * x + d).norm(),
+            vec_to_string(x)
+        );
+
         for (int inner = 0; inner < max_inner; ++inner) {
             
             // Calculate inequality clearances: s = C*x + d
@@ -212,12 +223,17 @@ void QPSolver::general_QP_solver(Result& result)
         // Tighter optimization target scaling
         tau *= mu;
         if (tau < 1e-8) break;
+        ++outer;
     }
 
     // Wrap results
     result.x = x;
+    result.summary.iterations = outer;
     result.summary.final_cost = cost_func_(result.x);
-    result.summary.converged = true;
+    result.summary.converged = outer < max_outer;
+    if (!result.summary.converged) {
+        result.summary.termination_reason = TerminationReason::MaxIterations;
+    };
 }
 
 }

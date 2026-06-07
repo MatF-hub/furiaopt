@@ -74,9 +74,9 @@ if(FURIAOPTIMIZER_BUILD_EXAMPLES)
     add_executable(rosenbrock_example examples/rosenbrock.cpp)
     target_link_libraries(rosenbrock_example PRIVATE furiaoptimizer spdlog::spdlog)
 
-    #Executable for the Robot Force Balance QP example
-    add_executable(qp_balance_example examples/qp_robot_balance.cpp)
-    target_link_libraries(qp_balance_example PRIVATE furiaoptimizer spdlog::spdlog)
+    #Executable for the Trajectory Smoothing QP example
+    add_executable(qp_trajectory_example examples/qp_2d_trajectory_smoothing.cpp)
+    target_link_libraries(qp_trajectory_example PRIVATE furiaoptimizer spdlog::spdlog)
 endif()
 
 # =====================================================

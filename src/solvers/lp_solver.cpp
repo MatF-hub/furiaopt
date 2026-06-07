@@ -12,9 +12,11 @@ inline std::string vec_to_string(const Eigen::VectorXd& v)
 namespace furiaoptimizer{
 
 LPSolver::LPSolver(const SolverOptions& options, const LPProblem& problem) : options_(std::cref(options)), problem_(std::cref(problem)) {
+    
     cost_func_ = [&problem](const Eigen::VectorXd& x) {
         return problem.c.transpose() * x;
     };
+    
 };
 
 Result LPSolver::solve(){
@@ -81,7 +83,18 @@ void LPSolver::general_LP_solver(Result& result)
     KKT.block(0, n, n, m_eq) = -A.transpose();
     KKT.block(n, 0, m_eq, n) = A;
 
-    for (int outer = 0; outer < max_outer; ++outer) {
+    int outer = 0;
+    while (outer < max_outer) {
+
+        spdlog::info(
+            "iter={},cost={:.8f},equality_constraint={:.3e},inequality_constraint={:.3e},x={}",
+            outer,
+            cost_func_(x),
+            (A * x + b).norm(),
+            (C * x + d).norm(),
+            vec_to_string(x)
+        );
+
         for (int inner = 0; inner < max_inner; ++inner) {
             
             // Vector elements: s_i = C_i * x + d_i
@@ -148,12 +161,17 @@ void LPSolver::general_LP_solver(Result& result)
         // Reduce barrier parameter to tighten the approximation to the true LP
         tau *= mu;
         if (tau < 1e-8) break;
+        ++outer;
     }
 
     // Pack results
     result.x = x;
-    result.summary.final_cost = c.transpose() * x;
-    result.summary.converged = true;
+    result.summary.iterations = outer;
+    result.summary.final_cost = cost_func_(result.x);
+    result.summary.converged = outer < max_outer;
+    if (!result.summary.converged) {
+        result.summary.termination_reason = TerminationReason::MaxIterations;
+    };
 
 };
 
