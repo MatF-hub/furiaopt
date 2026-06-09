@@ -1,4 +1,5 @@
 #include "solvers/qp_solver.hpp"
+#include "solvers/lp_solver.hpp"
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/basic_file_sink.h>
 
@@ -10,7 +11,7 @@ inline std::string vec_to_string(const Eigen::VectorXd& v)
 }
 namespace furiaoptimizer{
 
-QPSolver::QPSolver(const SolverOptions& options, const QPProblem& problem) : options_(std::cref(options)), problem_(std::cref(problem)) {
+QPSolver::QPSolver(const IPMSolverOptions& options, const QPProblem& problem) : options_(std::cref(options)), problem_(std::cref(problem)) {
 
     cost_func_ = [&problem](const Eigen::VectorXd& x) {
         return 0.5 * x.transpose() * problem.H * x + problem.c.dot(x);
@@ -21,7 +22,23 @@ Result QPSolver::solve(){
 
     spdlog::info("Starting solve");
     Result result;
-    result.summary.initial_cost = cost_func_(problem_.get().x0);
+
+    // Initialize variables
+    if (problem_.get().x0.has_value())
+    {
+        x_0_ = problem_.get().x0.value();
+    }
+    else
+    {
+        const Eigen::VectorXd& c = problem_.get().c;
+        const Eigen::MatrixXd& A = problem_.get().A.value_or(Eigen::MatrixXd::Zero(0, c.rows()));
+        const Eigen::VectorXd& b = problem_.get().b.value_or(Eigen::VectorXd::Zero(0));
+        const Eigen::MatrixXd& C = problem_.get().C.value_or(Eigen::MatrixXd::Zero(0, c.rows()));
+        const Eigen::VectorXd& d = problem_.get().d.value_or(Eigen::VectorXd::Zero(0));
+        x_0_ = LPSolver::computeFeasiblePoint(c, A, b, C, d, options_.get());
+    }
+    
+    result.summary.initial_cost = cost_func_(x_0_);
 
     if (problem_.get().hasInequalityConstraints())
     {
@@ -134,15 +151,15 @@ void QPSolver::general_QP_solver(Result& result)
     const size_t m_eq = A.rows();
 
     // Variable Initialization
-    Eigen::VectorXd x = problem_.get().x0;
+    Eigen::VectorXd x = x_0_;
     Eigen::VectorXd lambda = Eigen::VectorXd::Zero(m_eq);
 
     // IPM Control Parameters
-    double tau = 10.0;              // Initial barrier parameter strength
-    const double mu = 0.1;          // Tau attenuation stepping scalar
-    const int max_outer = 20;       // Barrier reduction iterations
-    const int max_inner = 30;       // Fixed centering Newton steps per inner loop
-    const double tol = 1e-6;        // Global convergence threshold
+    double tau = options_.get().tau_initial;              // Initial barrier parameter strength
+    const double mu = options_.get().tau_factor;          // Tau attenuation stepping scalar
+    const int max_outer = options_.get().max_outer;       // Barrier reduction iterations
+    const int max_inner = options_.get().max_inner;       // Fixed centering Newton steps per inner loop
+    const double tol = options_.get().ipm_tol;        // Global convergence threshold
 
     // Allocate KKT Memory Frame
     Eigen::MatrixXd KKT = Eigen::MatrixXd::Zero(n + m_eq, n + m_eq);
@@ -226,8 +243,12 @@ void QPSolver::general_QP_solver(Result& result)
         ++outer;
     }
 
+    Eigen::VectorXd dual_stationary = H * x + c - A.transpose() * lambda;
+    Eigen::VectorXd mhu = C.transpose().colPivHouseholderQr().solve(dual_stationary);
     // Wrap results
     result.x = x;
+    result.lambda = lambda;
+    result.mhu = mhu;
     result.summary.iterations = outer;
     result.summary.final_cost = cost_func_(result.x);
     result.summary.converged = outer < max_outer;

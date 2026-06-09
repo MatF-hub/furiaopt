@@ -50,7 +50,7 @@ inline GlobalizationMethod parse_globalization_method(
 // Load config file
 //------------------------------------------
 
-inline SolverOptions load_solver_options(
+inline UnconstrainedSolverOptions load_solver_options(
     const std::string& filepath)
 {
     std::ifstream file(filepath);
@@ -64,7 +64,7 @@ inline SolverOptions load_solver_options(
     json j;
     file >> j;
 
-    SolverOptions opt;
+    UnconstrainedSolverOptions opt;
 
     opt.max_iter =
         j.value("max_iter", 100);

@@ -16,7 +16,7 @@ enum class GlobalizationMethod {
     LineSearch,
     TrustRegion
 };
-struct SolverOptions{
+struct UnconstrainedSolverOptions {
     DirectionMethod direction_method;
     GlobalizationMethod globalization_method;
     int max_iter;
@@ -26,6 +26,17 @@ struct SolverOptions{
     std::string log_file_folder_path;
 };
 
+struct IPMSolverOptions {
+    double tau_initial;
+    double tau_factor;
+    int max_outer;
+    int max_inner;
+    double ipm_tol;
+};
+
+struct ConstrainedSolverOptions: UnconstrainedSolverOptions {
+    IPMSolverOptions QP_subproblem_options; 
+};
 
 struct LinearConstraints {
 
@@ -42,7 +53,7 @@ struct LinearConstraints {
 //                         s.t Ax + b = 0   (equality constraints)
 //                         Cx + d >= 0      (inequality constraints)
 struct LPProblem: public LinearConstraints{
-    Eigen::VectorXd x0;
+    std::optional<Eigen::VectorXd> x0;
     Eigen::VectorXd c; // Linear term
 
 };
@@ -51,7 +62,7 @@ struct LPProblem: public LinearConstraints{
 //                         s.t Ax + b = 0   (equality constraints)
 //                         Cx + d >= 0      (inequality constraints)
 struct QPProblem: public LinearConstraints {
-    Eigen::VectorXd x0;
+    std::optional<Eigen::VectorXd> x0;
     Eigen::MatrixXd H; // Quadratic term
     Eigen::VectorXd c; // Linear term
 };
@@ -112,6 +123,8 @@ struct SolverSummary {
 
 struct Result {
     Eigen::VectorXd x = Eigen::VectorXd::Zero(0);
+    Eigen::VectorXd lambda = Eigen::VectorXd::Zero(0);
+    Eigen::VectorXd mhu = Eigen::VectorXd::Zero(0);
     SolverSummary summary;
 };
 

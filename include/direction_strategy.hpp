@@ -30,19 +30,31 @@ public:
     };
 };
 
-class BFGSDirection : public DirectionStrategy {
+class BFGSHessianApproximation {
+private:
+    std::reference_wrapper<const NLPProblem> problem_;
     Eigen::MatrixXd H_k_; // Approximation of the Hessian at iteration k+1
     bool initialized_ = false; // Flag to check if H_k_plus_1_ has been initialized
     Eigen::VectorXd x_k_; // Previous iterate
     Eigen::VectorXd g_k_; // Gradient at previous iterate
     double gamma_ = 0.2; // Powell Damping factor for BFGS method
 public:
-    BFGSDirection(const NLPProblem& problem) : DirectionStrategy(problem)
+    BFGSHessianApproximation(const NLPProblem& problem) : problem_(std::cref(problem))
     {
         //Here we can understand dimensions of the problem and initialize H_k_plus_1_, x_k_ and g_k_ accordingly.
         int problem_size = problem.x0.size();
         H_k_ = Eigen::MatrixXd::Identity(problem_size, problem_size); // Initial Hessian approximation
     };
+
+    Eigen::MatrixXd getApproximateHessian(const Eigen::VectorXd& g_k_plus_1, const Eigen::VectorXd& x_k_plus_1);
+};
+
+class BFGSDirection : public DirectionStrategy {
+
+    BFGSHessianApproximation hessian_approximation_;
+
+public:
+    BFGSDirection(const NLPProblem& problem) : DirectionStrategy(problem), hessian_approximation_(problem) {};
     
     Eigen::VectorXd getDirection(const Eigen::VectorXd& g_k_plus_1, const Eigen::VectorXd& x_k_plus_1) override;
 };
@@ -60,15 +72,24 @@ public:
     
 };
 
+class GaussNewtonHessianApproximation {
+    std::reference_wrapper<const LSProblem> problem_;
+    double sigma_ = 1e-10; // Damping factor for Gauss-Newton method
+
+public: 
+    GaussNewtonHessianApproximation(const LSProblem& problem) : problem_(std::cref(problem)){};
+
+    Eigen::MatrixXd getApproximateHessian(const Eigen::VectorXd& x_i);
+};
+
 class GaussNewtonDirection {
 
-    private:
-        std::reference_wrapper<const LSProblem> problem_;
-        Eigen::LLT<Eigen::MatrixXd> llt_;
-        Eigen::LDLT<Eigen::MatrixXd> ldlt_;
-        double sigma_ = 1e-10; // Damping factor for Gauss-Newton method
+private:
+    GaussNewtonHessianApproximation hessian_approximation_;
+    Eigen::LLT<Eigen::MatrixXd> llt_;
+    Eigen::LDLT<Eigen::MatrixXd> ldlt_;
 public:
-    GaussNewtonDirection(const LSProblem& problem): problem_(problem){};
+    GaussNewtonDirection(const LSProblem& problem): hessian_approximation_(problem) {};
 
     Eigen::VectorXd getDirection(const Eigen::VectorXd& gradient, const Eigen::VectorXd& x_i);
 };

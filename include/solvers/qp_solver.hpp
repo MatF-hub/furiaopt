@@ -9,14 +9,15 @@ namespace furiaoptimizer{
 class QPSolver{
 
     CostFunc cost_func_;
+    Eigen::VectorXd x_0_;
 
-    std::reference_wrapper<const SolverOptions> options_;
+    std::reference_wrapper<const IPMSolverOptions> options_;
     std::reference_wrapper<const QPProblem> problem_;
 
 public:
 
     //Constructor that takes the solver options and the problem structure
-    QPSolver(const SolverOptions& options, const QPProblem& problem);
+    QPSolver(const IPMSolverOptions& options, const QPProblem& problem);
 
     //Solve call
     Result solve();

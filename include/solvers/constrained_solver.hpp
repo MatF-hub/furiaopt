@@ -9,14 +9,27 @@ namespace furiaoptimizer{
 
 class ConstrainedSolver{
 
-    SolverOptions& options_;
-    NLPProblem& problem_;
-    std::unique_ptr<DirectionStrategy> direction_strategy_;
+    //The same solver can be used for both NLP and LS problems.
+    //At this scope use a type-erasure approach to decouple the solver from the specific problem type.
+    CostFunc cost_func_;
+    GradientFunc gradient_func_;
+    std::function<Eigen::MatrixXd(const Eigen::VectorXd&, const Eigen::VectorXd&)> get_approximate_hessian_func_;
+
+    //Constrained
+    EqualityConstraintFunc equality_constraint_func_;
+    JacobianEqualityConstraintFunc jacobian_equality_constraint_func_;
+    InequalityConstraintFunc inequality_constraint_func_;
+    JacobianInequalityConstraintFunc jacobian_inequality_constraint_func_;
+
+    Eigen::VectorXd x0_;
+
+    std::reference_wrapper<const ConstrainedSolverOptions> options_;
 
 public:
 
     //Constructor that takes the solver options and the problem structure
-    ConstrainedSolver(const SolverOptions& options, const NLPProblem& problem);
+    ConstrainedSolver(const ConstrainedSolverOptions& options, const NLPProblem& problem);
+    ConstrainedSolver(const ConstrainedSolverOptions& options, const LSProblem& problem);
 
     //Solve call
     Result solve();

@@ -18,13 +18,13 @@ private:
 
     Eigen::VectorXd x0_;
 
-    std::reference_wrapper<const SolverOptions> options_;
+    std::reference_wrapper<const UnconstrainedSolverOptions> options_;
 
 public:
 
     //Constructor that takes the solver options and the problem structure
-    UnconstrainedSolver(const SolverOptions& options, const NLPProblem& problem);
-    UnconstrainedSolver(const SolverOptions& options, const LSProblem& problem);
+    UnconstrainedSolver(const UnconstrainedSolverOptions& options, const NLPProblem& problem);
+    UnconstrainedSolver(const UnconstrainedSolverOptions& options, const LSProblem& problem);
 
 
     //Solve call

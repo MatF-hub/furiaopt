@@ -26,7 +26,7 @@ void init_logger(const std::string& log_file_folder)
 int main()
 {
     // 1. Initialize Configuration and Logger
-    furiaoptimizer::SolverOptions options = furiaoptimizer::load_solver_options("config/config.json");
+    furiaoptimizer::UnconstrainedSolverOptions options = furiaoptimizer::load_solver_options("config/config.json");
     init_logger(options.log_file_folder_path);
     
     spdlog::info("=================================================");
@@ -160,7 +160,8 @@ int main()
     }
 
     // 7. Initialize Solver Loop and Execute Run
-    furiaoptimizer::QPSolver solver(options, problem);
+    furiaoptimizer::IPMSolverOptions ipm_options; //Later i need to change load method to account for those.
+    furiaoptimizer::QPSolver solver(ipm_options, problem);
     furiaoptimizer::Result result = solver.solve();
 
     // 8. Stream Out Final 2D Mapping Profile

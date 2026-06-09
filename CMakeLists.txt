@@ -39,6 +39,7 @@ add_library(furiaoptimizer
     src/solvers/unconstrained_solver.cpp
     src/solvers/lp_solver.cpp
     src/solvers/qp_solver.cpp
+    src/solvers/constrained_solver.cpp
     src/direction_strategy.cpp
 )
 

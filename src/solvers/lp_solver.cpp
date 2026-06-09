@@ -11,7 +11,7 @@ inline std::string vec_to_string(const Eigen::VectorXd& v)
 }
 namespace furiaoptimizer{
 
-LPSolver::LPSolver(const SolverOptions& options, const LPProblem& problem) : options_(std::cref(options)), problem_(std::cref(problem)) {
+LPSolver::LPSolver(const IPMSolverOptions& options, const LPProblem& problem) : options_(std::cref(options)), problem_(std::cref(problem)) {
     
     cost_func_ = [&problem](const Eigen::VectorXd& x) {
         return problem.c.transpose() * x;
@@ -23,7 +23,6 @@ Result LPSolver::solve(){
 
     spdlog::info("Starting solve");
     Result result;
-    result.summary.initial_cost = cost_func_(problem_.get().x0);
 
     if (problem_.get().hasInequalityConstraints() || problem_.get().hasEqualityConstraints())
     {
@@ -65,15 +64,27 @@ void LPSolver::general_LP_solver(Result& result)
     const size_t m_eq = A.rows();
 
     // Initialize variables
-    Eigen::VectorXd x = problem_.get().x0;
+    Eigen::VectorXd x;
+
+    if (problem_.get().x0.has_value())
+    {
+        x = problem_.get().x0.value();
+    }
+    else
+    {
+        x = computeFeasiblePoint(c, A, b, C, d, options_.get());
+    }
+
+    result.summary.initial_cost = cost_func_(x);
+
     Eigen::VectorXd lambda = Eigen::VectorXd::Zero(m_eq);
 
     // IPM Hyperparameters
-    double tau = 10.0;          // Initial barrier parameter
-    const double mu = 0.1;      // Tau reduction factor (tau = tau * mu)
-    const int max_outer = 20;   // Outer iterations (centering steps)
-    const int max_inner = 30;   // Inner Newton iterations
-    const double tol = 1e-6;    // KKT tolerance
+    double tau = options_.get().tau_initial;              // Initial barrier parameter strength
+    const double mu = options_.get().tau_factor;          // Tau attenuation stepping scalar
+    const int max_outer = options_.get().max_outer;       // Barrier reduction iterations
+    const int max_inner = options_.get().max_inner;       // Fixed centering Newton steps per inner loop
+    const double tol = options_.get().ipm_tol;        // Global convergence threshold
 
     // Pre-allocate KKT System: Left-Hand Side (LHS) and Right-Hand Side (RHS)
     Eigen::MatrixXd KKT = Eigen::MatrixXd::Zero(n + m_eq, n + m_eq);
@@ -155,7 +166,7 @@ void LPSolver::general_LP_solver(Result& result)
             x += alpha * dx;
             lambda += alpha * dlambda;
 
-            if (dx.norm() < options_.get().step_tolerance) break;
+            if (dx.norm() < tol) break;
         }
 
         // Reduce barrier parameter to tighten the approximation to the true LP
@@ -164,8 +175,12 @@ void LPSolver::general_LP_solver(Result& result)
         ++outer;
     }
 
+    Eigen::VectorXd dual_stationary = c - A.transpose() * lambda;
+    Eigen::VectorXd mhu = C.transpose().colPivHouseholderQr().solve(dual_stationary);
     // Pack results
     result.x = x;
+    result.lambda = lambda;
+    result.mhu = mhu;
     result.summary.iterations = outer;
     result.summary.final_cost = cost_func_(result.x);
     result.summary.converged = outer < max_outer;
@@ -173,6 +188,76 @@ void LPSolver::general_LP_solver(Result& result)
         result.summary.termination_reason = TerminationReason::MaxIterations;
     };
 
+};
+
+Eigen::VectorXd LPSolver::computeFeasiblePoint(
+    const Eigen::VectorXd& c,
+    const Eigen::MatrixXd& A,
+    const Eigen::VectorXd& b,
+    const Eigen::MatrixXd& C,
+    const Eigen::VectorXd& d,
+    const IPMSolverOptions& options)
+{
+    //If initialization is not provided use auxiliary problem to get initialization.
+    //min s
+    //s.t A*x_0+b=0;
+    //    C*x_0+d-s=0;
+    //    s>=0;
+    LPProblem aux_problem;
+
+    const int nx = c.size();
+    const int ns = d.size();
+    aux_problem.x0 = Eigen::VectorXd::Ones(nx + ns);
+
+    // objective [0; 1]
+    aux_problem.c.resize(nx + ns);
+    aux_problem.c <<
+        Eigen::VectorXd::Zero(nx),
+        Eigen::VectorXd::Ones(ns);
+
+    // equality matrix [A 0; C -I]
+    Eigen::MatrixXd A_aux;
+    A_aux.resize( A.rows() + C.rows(), nx + ns);
+    A_aux << A, Eigen::MatrixXd::Zero(A.rows(), ns),
+                C, -Eigen::MatrixXd::Identity(ns, ns);
+
+    aux_problem.A = A_aux;
+
+    // rhs [-b; -d]
+    Eigen::VectorXd b_aux;
+    b_aux.resize(b.size() + d.size());
+    b_aux << b, d;
+    aux_problem.b = b_aux;
+
+    // inequalities: s >= 0
+    Eigen::MatrixXd C_aux;
+    C_aux.resize(ns, nx + ns);
+    C_aux <<  Eigen::MatrixXd::Zero(ns, nx),
+        Eigen::MatrixXd::Identity(ns, ns);
+    aux_problem.C = C_aux;
+    
+    aux_problem.d = Eigen::VectorXd::Zero(ns);
+
+    LPSolver solver(options, aux_problem);
+
+    Result aux_result = solver.solve();
+
+    // Check that point is feasible.
+    Eigen::VectorXd x = aux_result.x.head(nx);
+
+    const bool equality_feasible =
+        (A * x + b).norm() <= 1e-10;
+
+    const bool inequality_feasible =
+        (C * x + d).minCoeff() >= -1e-10;
+
+    if (equality_feasible && inequality_feasible)
+    {
+        return x;
+    }
+
+    throw std::runtime_error(
+        "Auxiliary LP did not produce a feasible point.");
 };
 
 }

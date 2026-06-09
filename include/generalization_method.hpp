@@ -6,7 +6,7 @@
 
 namespace furiaoptimizer {
 
-inline double compute_step_length(const SolverOptions& options, const CostFunc& f, const Eigen::VectorXd& g, const Eigen::VectorXd& x, const Eigen::VectorXd& direction)
+inline double compute_step_length(const UnconstrainedSolverOptions& options, const CostFunc& f, const Eigen::VectorXd& g, const Eigen::VectorXd& x, const Eigen::VectorXd& direction)
 {
     if (options.globalization_method == GlobalizationMethod::LineSearch)
     {
