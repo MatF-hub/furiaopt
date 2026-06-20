@@ -3,7 +3,7 @@
 #include <optional>
 #include "types.hpp"
 
-namespace furiaoptimizer
+namespace furiaopt
 {
 
 enum class DirectionMethod {

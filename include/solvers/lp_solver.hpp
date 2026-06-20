@@ -3,7 +3,7 @@
 #include <Eigen/Dense>
 #include "solver_config.hpp"
 #include "types.hpp"
-namespace furiaoptimizer{
+namespace furiaopt{
 
 
 class LPSolver{

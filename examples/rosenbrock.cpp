@@ -68,7 +68,7 @@ Eigen::MatrixXd rosenbrock_hessian(const Eigen::VectorXd& params, const Eigen::V
 int main()
 {
     //Setup solver options
-    furiaoptimizer::UnconstrainedSolverOptions options = furiaoptimizer::load_solver_options("config/config.json");
+    furiaopt::UnconstrainedSolverOptions options = furiaopt::load_solver_options("config/config.json");
 
     // Constants for the Rosenbrock function A = 1.0, B = 100.0
     double A_param = 1.0;
@@ -77,7 +77,7 @@ int main()
     params << 1.0, 100.0;
 
     //Setup problem to solve
-    furiaoptimizer::NLPProblem problem;
+    furiaopt::NLPProblem problem;
     problem.cost_func = [params](const Eigen::VectorXd& x) {
         return rosenbrock(params, x);
     };
@@ -102,8 +102,8 @@ int main()
     spdlog::info("Application started");
 
     //Initialize solver and solve the problem
-    furiaoptimizer::UnconstrainedSolver default_solver(options, problem);
-    furiaoptimizer::Result result = default_solver.solve();
+    furiaopt::UnconstrainedSolver default_solver(options, problem);
+    furiaopt::Result result = default_solver.solve();
 
     std::cout << "Optimized parameters: " << result.x.transpose() << std::endl;
     std::cout << "Solver summary: " << std::endl;

@@ -26,7 +26,7 @@ void init_logger(const std::string& log_file_folder)
 int main()
 {
     // 1. Initialize Configuration and Logger
-    furiaoptimizer::UnconstrainedSolverOptions options = furiaoptimizer::load_solver_options("config/config.json");
+    furiaopt::UnconstrainedSolverOptions options = furiaopt::load_solver_options("config/config.json");
     init_logger(options.log_file_folder_path);
     
     spdlog::info("=================================================");
@@ -42,7 +42,7 @@ int main()
     spdlog::info("Total optimization variables allocated: {} ({} points for X, {} points for Y)", 
                  num_vars, points_per_dim, points_per_dim);
 
-    furiaoptimizer::QPProblem problem;
+    furiaopt::QPProblem problem;
 
     // --- 3. Objective Function: Minimize Acceleration in 2D ---
     // Acceleration Matrix D for 1D dimension tracking: size (N-1) x (N+1) -> 48 x 50
@@ -160,9 +160,9 @@ int main()
     }
 
     // 7. Initialize Solver Loop and Execute Run
-    furiaoptimizer::IPMSolverOptions ipm_options; //Later i need to change load method to account for those.
-    furiaoptimizer::QPSolver solver(ipm_options, problem);
-    furiaoptimizer::Result result = solver.solve();
+    furiaopt::IPMSolverOptions ipm_options; //Later i need to change load method to account for those.
+    furiaopt::QPSolver solver(ipm_options, problem);
+    furiaopt::Result result = solver.solve();
 
     // 8. Stream Out Final 2D Mapping Profile
     std::cout << "=====================================================================\n";

@@ -1,5 +1,5 @@
 {
-  "name": "furiaoptimizer",
+  "name": "furiaopt",
   "version-string": "0.1.0",
   "description": "Modern C++ nonlinear optimization library",
   "dependencies": [

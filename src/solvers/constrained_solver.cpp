@@ -11,7 +11,7 @@ inline std::string vec_to_string(const Eigen::VectorXd& v)
     oss << v.transpose();
     return oss.str();
 }
-namespace furiaoptimizer{
+namespace furiaopt{
 
 ConstrainedSolver::ConstrainedSolver(const ConstrainedSolverOptions& options, const NLPProblem& problem)
     : options_(std::cref(options)), x0_(problem.x0){

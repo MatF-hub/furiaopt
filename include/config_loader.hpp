@@ -8,7 +8,7 @@
 
 #include "solver_config.hpp"
 
-namespace furiaoptimizer
+namespace furiaopt
 {
 
 using json = nlohmann::json;
@@ -94,4 +94,4 @@ inline UnconstrainedSolverOptions load_solver_options(
     return opt;
 }
 
-} // namespace furiaoptimizer
+} // namespace furiaopt

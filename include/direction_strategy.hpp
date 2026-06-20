@@ -4,7 +4,7 @@
 #include <Eigen/Cholesky> // For LLT and LDLT
 #include "solver_config.hpp"
 
-namespace furiaoptimizer{
+namespace furiaopt{
 
 class DirectionStrategy {
 

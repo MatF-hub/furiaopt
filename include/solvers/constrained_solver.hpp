@@ -4,7 +4,7 @@
 #include "solver_config.hpp"
 #include "types.hpp"
 #include "direction_strategy.hpp"
-namespace furiaoptimizer{
+namespace furiaopt{
 
 
 class ConstrainedSolver{

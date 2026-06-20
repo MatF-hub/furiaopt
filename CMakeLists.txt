@@ -35,7 +35,7 @@ find_package(nlohmann_json CONFIG REQUIRED)
 # Library
 # =====================================================
 
-add_library(furiaoptimizer
+add_library(furiaopt
     src/solvers/unconstrained_solver.cpp
     src/solvers/lp_solver.cpp
     src/solvers/qp_solver.cpp
@@ -43,23 +43,23 @@ add_library(furiaoptimizer
     src/direction_strategy.cpp
 )
 
-add_library(FuriaOptimizer::furiaoptimizer ALIAS furiaoptimizer)
+add_library(FuriaOptimizer::furiaopt ALIAS furiaopt)
 
-target_include_directories(furiaoptimizer
+target_include_directories(furiaopt
     PUBLIC
         ${PROJECT_SOURCE_DIR}/include
 )
 
-target_link_libraries(furiaoptimizer
+target_link_libraries(furiaopt
     PUBLIC
         Eigen3::Eigen
         spdlog::spdlog
         nlohmann_json::nlohmann_json
 )
 
-target_compile_features(furiaoptimizer PUBLIC cxx_std_20)
+target_compile_features(furiaopt PUBLIC cxx_std_20)
 
-target_compile_options(furiaoptimizer
+target_compile_options(furiaopt
     PRIVATE
         -Wall
         -Wextra
@@ -73,11 +73,11 @@ target_compile_options(furiaoptimizer
 if(FURIAOPTIMIZER_BUILD_EXAMPLES)
     #Executable for the Rosenbrock NLP example
     add_executable(rosenbrock_example examples/rosenbrock.cpp)
-    target_link_libraries(rosenbrock_example PRIVATE furiaoptimizer spdlog::spdlog)
+    target_link_libraries(rosenbrock_example PRIVATE furiaopt spdlog::spdlog)
 
     #Executable for the Trajectory Smoothing QP example
     add_executable(qp_trajectory_example examples/qp_2d_trajectory_smoothing.cpp)
-    target_link_libraries(qp_trajectory_example PRIVATE furiaoptimizer spdlog::spdlog)
+    target_link_libraries(qp_trajectory_example PRIVATE furiaopt spdlog::spdlog)
 endif()
 
 # =====================================================
@@ -86,7 +86,7 @@ endif()
 
 if(FURIAOPTIMIZER_BUILD_BENCHMARKS)
 
-    add_executable(furiaoptimizer_benchmarks
+    add_executable(furiaopt_benchmarks
         #benchmarks/example_benchmark.cpp
     )
 
@@ -102,18 +102,18 @@ if(FURIAOPTIMIZER_BUILD_TESTS)
 
     find_package(Catch2 CONFIG REQUIRED)
 
-    add_executable(furiaoptimizer_tests
+    add_executable(furiaopt_tests
         #tests/example_test.cpp
     )
 
-    target_link_libraries(furiaoptimizer_tests
+    target_link_libraries(furiaopt_tests
         PRIVATE
-            FuriaOptimizer::furiaoptimizer
+            FuriaOptimizer::furiaopt
             Catch2::Catch2WithMain
     )
 
     include(Catch)
 
-    catch_discover_tests(furiaoptimizer_tests)
+    catch_discover_tests(furiaopt_tests)
 
 endif()

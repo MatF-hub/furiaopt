@@ -1,6 +1,6 @@
 #include "direction_strategy.hpp"
 
-namespace furiaoptimizer{
+namespace furiaopt{
 
 Eigen::VectorXd ExactHessianDirection::getDirection(const Eigen::VectorXd& gradient, const Eigen::VectorXd& x_i)
 {

@@ -4,7 +4,7 @@
 
 #include <Eigen/Dense>
 
-namespace furiaoptimizer {
+namespace furiaopt {
 
 inline double compute_step_length(const GlobalizationMethod& globalization_method, 
                                   const CostFunc& f, const double& dir_deriv, 

@@ -5,7 +5,7 @@
 #include "types.hpp"
 #include "direction_strategy.hpp"
 #include <variant>
-namespace furiaoptimizer{
+namespace furiaopt{
 
 class UnconstrainedSolver{
 

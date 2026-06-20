@@ -3,7 +3,7 @@
 #include <Eigen/Dense>
 #include <functional>
 
-namespace furiaoptimizer {
+namespace furiaopt {
 using CostFunc = std::function<double(const Eigen::VectorXd& x)>;
 using GradientFunc = std::function<Eigen::VectorXd(const Eigen::VectorXd& x)>;
 using HessianFunc = std::function<Eigen::MatrixXd(const Eigen::VectorXd& x)>;

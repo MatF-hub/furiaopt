@@ -4,7 +4,7 @@
 #include <optional>
 #include "solver_config.hpp"
 
-namespace furiaoptimizer
+namespace furiaopt
 {
 
     inline Eigen::VectorXd compute_gradient(const NLPProblem& problem, const Eigen::VectorXd& x)

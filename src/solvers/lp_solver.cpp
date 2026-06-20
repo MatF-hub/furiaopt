@@ -9,7 +9,7 @@ inline std::string vec_to_string(const Eigen::VectorXd& v)
     oss << v.transpose();
     return oss.str();
 }
-namespace furiaoptimizer{
+namespace furiaopt{
 
 LPSolver::LPSolver(const IPMSolverOptions& options, const LPProblem& problem) : options_(std::cref(options)), problem_(std::cref(problem)) {
     
