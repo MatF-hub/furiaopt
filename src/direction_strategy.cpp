@@ -61,7 +61,7 @@ Eigen::MatrixXd GaussNewtonHessianApproximation::getApproximateHessian(const Eig
     Eigen::VectorXd residual_vector = problem_.get().residual_func(x_i);
 
     Eigen::MatrixXd JtJ = gradient_residual_vector * gradient_residual_vector.transpose(); // n×n
-    Eigen::MatrixXd approximate_hessian =  2 * JtJ + sigma_ * Eigen::MatrixXd::Identity(JtJ.rows(), JtJ.rows());
+    Eigen::MatrixXd approximate_hessian =  2 * Jt00000J + sigma_ * Eigen::MatrixXd::Identity(JtJ.rows(), JtJ.rows());
     return approximate_hessian;
 };
 
@@ -88,6 +88,8 @@ Eigen::MatrixXd BFGSHessianApproximation::getApproximateHessian(const Eigen::Vec
     }
 
     H_k_ = H_k_ + (y * y.transpose()) / (sTy) - (H_k_ * s * s.transpose() * H_k_) / sTHs;
+    x_k_ = x_k_plus_1;
+    g_k_ = g_k_plus_1;
     return H_k_;
 };
 

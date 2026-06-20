@@ -65,7 +65,7 @@ UnconstrainedSolver::UnconstrainedSolver(const UnconstrainedSolverOptions& optio
     };
     gradient_func_ = [&problem](const Eigen::VectorXd& x) {
         if (problem.gradient_residual_func.has_value()) {
-            return 2 * problem.gradient_residual_func.value()(x).transpose() * problem.residual_func(x);
+            return 2 * problem.gradient_residual_func.value()(x) * problem.residual_func(x);
         } else {
             // Numerical approximation of the Jacobian matrix of the residual function
             throw std::invalid_argument("Gradient of residual function must be provided");
