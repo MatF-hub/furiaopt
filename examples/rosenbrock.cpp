@@ -68,7 +68,7 @@ Eigen::MatrixXd rosenbrock_hessian(const Eigen::VectorXd& params, const Eigen::V
 int main()
 {
     //Setup solver options
-    furiaoptimizer::SolverOptions options = furiaoptimizer::load_solver_options("config/config.json");
+    furiaoptimizer::UnconstrainedSolverOptions options = furiaoptimizer::load_solver_options("config/config.json");
 
     // Constants for the Rosenbrock function A = 1.0, B = 100.0
     double A_param = 1.0;

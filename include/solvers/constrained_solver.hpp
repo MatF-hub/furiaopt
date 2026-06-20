@@ -33,10 +33,6 @@ public:
 
     //Solve call
     Result solve();
-
-private:
-    //Sequential quadratic programming solver for non-linear problems
-    void SQP_solver(Result& result, const NLPProblem& problem_);
 };
 
 }

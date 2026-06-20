@@ -118,6 +118,8 @@ Result ConstrainedSolver::solve(){
     const int num_inequality_constraints = jacobian_inequality_constraint_func_ ? jacobian_inequality_constraint_func_(x0_).rows() : 0;
     Eigen::VectorXd lambda_i = Eigen::VectorXd::Zero(num_equality_constraints);
     Eigen::VectorXd mhu_i = Eigen::VectorXd::Zero(num_inequality_constraints);
+    Eigen::VectorXd sigma_j = Eigen::VectorXd::Ones(num_equality_constraints);
+    Eigen::VectorXd tau_j = Eigen::VectorXd::Ones(num_inequality_constraints);
     Eigen::VectorXd x_i = x0_;
 
     while (iter < options_.get().max_iter) {
@@ -160,9 +162,29 @@ Result ConstrainedSolver::solve(){
             break;
         }
 
-        double step_length; // result for line search on T1 merit function;
+        //Line search with armijo stopping condition on L1-Norm merit function
+        double step_length = compute_step_length(options_.get().globalization_method, 
+                                                 cost_func_,
+                                                 equality_constraint_func_, 
+                                                 inequality_constraint_func_, 
+                                                 gradient_func_, 
+                                                 jacobian_inequality_constraint_func_,
+                                                 x_i,
+                                                 p_i, 
+                                                 sigma_j, 
+                                                 tau_j);
 
-        //here update sigma_j and tau_j
+        //Update sigma_j and tau_j
+        for (int i = 0; i < sigma_j.size(); i++)
+        {
+            double abs_lambda_i = std::abs(lambda_i(i));
+            sigma_j(i)=std::max(abs_lambda_i, (sigma_j(i)+abs_lambda_i)/2);
+        }
+        for (int i = 0; i < tau_j.size(); i++)
+        {
+            double abs_mhu_i = std::abs(mhu_i(i));
+            tau_j(i)=std::max(abs_mhu_i, (tau_j(i)+abs_mhu_i)/2);
+        }
 
         Eigen::VectorXd x_new = x_i + step_length * p_i;
         lambda_i = lambda_i + step_length * D_lambda_i;
@@ -187,10 +209,6 @@ Result ConstrainedSolver::solve(){
     result.summary.converged = iter < options_.get().max_iter && eq_constraint_satisfied && inequality_constraint_satisfied;
 
     return result;
-};
-
-void ConstrainedSolver::SQP_solver(Result& result, const NLPProblem& problem_){
-
 };
 
 }

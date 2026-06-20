@@ -121,7 +121,9 @@ Result UnconstrainedSolver::solve(){
             break;
         }
 
-        auto step_length = compute_step_length(options_.get(), cost_func_, g_i, x_i, direction);
+        const double directional_derivative = g_i.dot(direction);
+        
+        auto step_length = compute_step_length(options_.get().globalization_method, cost_func_, directional_derivative, x_i, direction);
 
         Eigen::VectorXd x_new = x_i + step_length * direction;
 
