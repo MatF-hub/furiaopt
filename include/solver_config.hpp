@@ -30,11 +30,11 @@ struct UnconstrainedSolverOptions {
 };
 
 struct IPMSolverOptions {
-    double tau_initial;
-    double tau_factor;
-    int max_outer;
-    int max_inner;
-    double ipm_tol;
+    double tau_initial = 1.0;
+    double tau_factor  = 0.2;
+    int    max_outer   = 40;
+    int    max_inner   = 50;
+    double ipm_tol     = 1e-8;
     std::shared_ptr<spdlog::logger> logger = std::make_shared<spdlog::logger>("null", std::make_shared<spdlog::sinks::null_sink_mt>());
 };
 

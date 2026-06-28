@@ -9,7 +9,7 @@
 int main()
 {
     // 1. Initialize Configuration and Logger
-    furiaopt::UnconstrainedSolverOptions options = furiaopt::load_solver_options("config/config.json");
+    furiaopt::IPMSolverOptions options = furiaopt::load_ipm_solver_options("config/config.json");
 
     options.logger->info("=================================================");
     options.logger->info("2D Trajectory Smoothing Optimization Pipeline Init");
@@ -142,8 +142,7 @@ int main()
     }
 
     // 7. Initialize Solver Loop and Execute Run
-    furiaopt::IPMSolverOptions ipm_options; //Later i need to change load method to account for those.
-    furiaopt::QPSolver solver(ipm_options, problem);
+    furiaopt::QPSolver solver(options, problem);
     furiaopt::Result result = solver.solve();
 
     // 8. Stream Out Final 2D Mapping Profile
