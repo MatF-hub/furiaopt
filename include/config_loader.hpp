@@ -3,8 +3,13 @@
 #include <fstream>
 #include <stdexcept>
 #include <string>
+#include <memory>
 
 #include <nlohmann/json.hpp>
+
+#include <spdlog/logger.h>
+#include <spdlog/sinks/null_sink.h>
+#include <spdlog/sinks/basic_file_sink.h>
 
 #include "solver_config.hpp"
 
@@ -88,8 +93,19 @@ inline UnconstrainedSolverOptions load_solver_options(
             j.value("globalization_method",
                     "LineSearch"));
 
-    opt.log_file_folder_path =
-        j.value("log_file_folder_path", "logs/");
+    // Create logger based on log_file_folder_path
+    auto log_folder = j.value("log_file_folder_path", std::string("logs/"));
+    if (!log_folder.empty()) {
+        auto file_logger = spdlog::basic_logger_mt<spdlog::synchronous_factory>(
+            "file_logger", log_folder + "/solver.log", true);
+        file_logger->set_level(spdlog::level::info);
+        file_logger->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%l] %v");
+        opt.logger = file_logger;
+    } else {
+        // Use null sink logger
+        opt.logger = std::make_shared<spdlog::logger>("null",
+            std::make_shared<spdlog::sinks::null_sink_mt>());
+    }
 
     return opt;
 }

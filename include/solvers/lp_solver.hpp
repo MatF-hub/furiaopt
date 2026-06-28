@@ -12,6 +12,7 @@ class LPSolver{
 
     std::reference_wrapper<const IPMSolverOptions> options_;
     std::reference_wrapper<const LPProblem> problem_;
+    std::shared_ptr<spdlog::logger> logger_;
 
 public:
 

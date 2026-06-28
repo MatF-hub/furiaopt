@@ -6,40 +6,22 @@
 // Config loader
 #include "config_loader.hpp"
 
-// Logger
-#include <spdlog/spdlog.h>
-#include <spdlog/sinks/basic_file_sink.h>
-#include <memory>
-
-void init_logger(const std::string& log_file_folder)
-{
-    auto logger = spdlog::basic_logger_mt(
-        "furia_optimizer_logger",
-        log_file_folder + "qp_2d_trajectory.log",
-        true
-    );
-    logger->set_level(spdlog::level::info);
-    logger->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%l] %v");
-    spdlog::set_default_logger(logger);
-}
-
 int main()
 {
     // 1. Initialize Configuration and Logger
     furiaopt::UnconstrainedSolverOptions options = furiaopt::load_solver_options("config/config.json");
-    init_logger(options.log_file_folder_path);
-    
-    spdlog::info("=================================================");
-    spdlog::info("2D Trajectory Smoothing Optimization Pipeline Init");
-    spdlog::info("=================================================");
+
+    options.logger->info("=================================================");
+    options.logger->info("2D Trajectory Smoothing Optimization Pipeline Init");
+    options.logger->info("=================================================");
 
     // 2. Structural Dimensions Setup
     // Total Optimization Variables = 100 -> implies 50 points for X and 50 points for Y
-    const int points_per_dim = 50; 
+    const int points_per_dim = 50;
     const int N = points_per_dim - 1; // 49 intervals
     const int num_vars = 2 * points_per_dim; // 100 total decision variables
-    
-    spdlog::info("Total optimization variables allocated: {} ({} points for X, {} points for Y)", 
+
+    options.logger->info("Total optimization variables allocated: {} ({} points for X, {} points for Y)",
                  num_vars, points_per_dim, points_per_dim);
 
     furiaopt::QPProblem problem;
@@ -82,13 +64,13 @@ int main()
         // X constraint: 1 * u[index] = x_val  =>  1 * u[index] - x_val = 0
         A_eq(eq_row, anchor.index) = 1.0;
         b_eq(eq_row) = -anchor.x_val;
-        spdlog::info("Applying Equality Constraint: Waypoint {} FIXED at X = {}", anchor.index, anchor.x_val);
+        options.logger->info("Applying Equality Constraint: Waypoint {} FIXED at X = {}", anchor.index, anchor.x_val);
         eq_row++;
 
         // Y constraint: 1 * u[points_per_dim + index] = y_val
         A_eq(eq_row, points_per_dim + anchor.index) = 1.0;
         b_eq(eq_row) = -anchor.y_val;
-        spdlog::info("Applying Equality Constraint: Waypoint {} FIXED at Y = {}", anchor.index, anchor.y_val);
+        options.logger->info("Applying Equality Constraint: Waypoint {} FIXED at Y = {}", anchor.index, anchor.y_val);
         eq_row++;
     }
     problem.A = A_eq;
@@ -104,22 +86,22 @@ int main()
     // Row 0: Waypoint 10 Upper Bound X <= 1.5  => -1*x_10 + 1.5 >= 0
     C_ineq(0, 10) = -1.0;
     d_ineq(0) = 1.5;
-    spdlog::info("Applying Inequality Constraint: Waypoint 10 must be BELOW X = 1.5");
+    options.logger->info("Applying Inequality Constraint: Waypoint 10 must be BELOW X = 1.5");
 
     // Row 1: Waypoint 10 Lower Bound Y >= 3.0  => 1*y_10 - 3.0 >= 0
     C_ineq(1, points_per_dim + 10) = 1.0;
     d_ineq(1) = -3.0;
-    spdlog::info("Applying Inequality Constraint: Waypoint 10 must be ABOVE Y = 3.0");
+    options.logger->info("Applying Inequality Constraint: Waypoint 10 must be ABOVE Y = 3.0");
 
     // Row 2: Waypoint 25 Lower Bound X >= 6.0  => 1*x_25 - 6.0 >= 0
     C_ineq(2, 25) = 1.0;
     d_ineq(2) = -6.0;
-    spdlog::info("Applying Inequality Constraint: Waypoint 25 must be ABOVE X = 6.0");
+    options.logger->info("Applying Inequality Constraint: Waypoint 25 must be ABOVE X = 6.0");
 
     // Row 3: Waypoint 25 Upper Bound Y <= 4.5  => -1*y_25 + 4.5 >= 0
     C_ineq(3, points_per_dim + 25) = -1.0;
     d_ineq(3) = 4.5;
-    spdlog::info("Applying Inequality Constraint: Waypoint 25 must be BELOW Y = 4.5");
+    options.logger->info("Applying Inequality Constraint: Waypoint 25 must be BELOW Y = 4.5");
 
     problem.C = C_ineq;
     problem.d = d_ineq;
@@ -151,11 +133,11 @@ int main()
 
     // Log Initialization Guard Verification
     Eigen::VectorXd feasibility_check = (C_ineq * u_init) + d_ineq;
-    spdlog::info("Initial Guess Log Barrier Feasibility Clearance Values:");
+    options.logger->info("Initial Guess Log Barrier Feasibility Clearance Values:");
     for(int r = 0; r < num_ineq_rows; ++r) {
-        spdlog::info("  Inequality Row Constraint Margin [{}]: {}", r, feasibility_check[r]);
+        options.logger->info("  Inequality Row Constraint Margin [{}]: {}", r, feasibility_check[r]);
         if(feasibility_check[r] <= 0) {
-            spdlog::error("FATAL: Initial guess violates inequality row {}", r);
+            options.logger->error("FATAL: Initial guess violates inequality row {}", r);
         }
     }
 

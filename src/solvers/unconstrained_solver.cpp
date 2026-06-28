@@ -13,10 +13,10 @@ inline std::string vec_to_string(const Eigen::VectorXd& v)
 namespace furiaopt{
 
 UnconstrainedSolver::UnconstrainedSolver(const UnconstrainedSolverOptions& options, const NLPProblem& problem)
-    : options_(std::cref(options)), x0_(problem.x0) {
+    : options_(std::cref(options)), x0_(problem.x0), logger_(options_.get().logger ? options_.get().logger : std::make_shared<spdlog::logger>("null", std::make_shared<spdlog::sinks::null_sink_mt>())) {
 
     if (problem.hasEqualityConstraints() || problem.hasInequalityConstraints()) {
-        throw std::invalid_argument("Constraints are present in the problem, please use the ConstrainedSolver instead of UnconstrainedSolver");
+        logger_->warn("Constraints are present in the problem, please use the ConstrainedSolver instead of UnconstrainedSolver");
     }
 
     cost_func_ = [&problem](const Eigen::VectorXd& x) { return problem.cost_func(x); };
@@ -42,7 +42,7 @@ UnconstrainedSolver::UnconstrainedSolver(const UnconstrainedSolverOptions& optio
         }
         case DirectionMethod::ExactNewton:
         {
-            spdlog::info("Exact Newton direction selected: notice that for this method to converge the Hessian should be PD or at least SPD");
+            logger_->info("Exact Newton direction selected: notice that for this method to converge the Hessian should be PD or at least SPD");
             auto strategy = ExactHessianDirection(problem);
             get_direction_func_ = [strategy](const Eigen::VectorXd& gradient, const Eigen::VectorXd& x_i) mutable {
                 return strategy.getDirection(gradient, x_i);
@@ -55,10 +55,10 @@ UnconstrainedSolver::UnconstrainedSolver(const UnconstrainedSolverOptions& optio
 };
 
 UnconstrainedSolver::UnconstrainedSolver(const UnconstrainedSolverOptions& options, const LSProblem& problem)
-    : options_(std::cref(options)), x0_(problem.x0) {
+    : options_(std::cref(options)), x0_(problem.x0), logger_(options_.get().logger ? options_.get().logger : std::make_shared<spdlog::logger>("null", std::make_shared<spdlog::sinks::null_sink_mt>())) {
 
     if (problem.hasEqualityConstraints() || problem.hasInequalityConstraints()) {
-        throw std::invalid_argument("Constraints are present in the problem, please use the ConstrainedSolver instead of UnconstrainedSolver");
+        logger_->warn("Constraints are present in the problem, please use the ConstrainedSolver instead of UnconstrainedSolver");
     }
     cost_func_ = [&problem](const Eigen::VectorXd& x) {
         return problem.residual_func(x).transpose() * problem.residual_func(x);
@@ -81,7 +81,7 @@ UnconstrainedSolver::UnconstrainedSolver(const UnconstrainedSolverOptions& optio
 
 Result UnconstrainedSolver::solve(){
 
-    spdlog::info("Starting solve");
+    logger_->info("Starting solve");
     Result result;
     result.summary.initial_cost = cost_func_(x0_);
 
@@ -96,7 +96,7 @@ Result UnconstrainedSolver::solve(){
 
         double f_i = cost_func_(x_i);
 
-        spdlog::info(
+        logger_->info(
             "iter={},cost={:.8f},grad_norm={:.3e},x={}",
             iter,
             f_i,

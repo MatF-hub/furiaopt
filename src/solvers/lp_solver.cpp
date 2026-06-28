@@ -11,17 +11,17 @@ inline std::string vec_to_string(const Eigen::VectorXd& v)
 }
 namespace furiaopt{
 
-LPSolver::LPSolver(const IPMSolverOptions& options, const LPProblem& problem) : options_(std::cref(options)), problem_(std::cref(problem)) {
-    
+LPSolver::LPSolver(const IPMSolverOptions& options, const LPProblem& problem) : options_(std::cref(options)), problem_(std::cref(problem)), logger_(options_.get().logger ? options_.get().logger : std::make_shared<spdlog::logger>("null", std::make_shared<spdlog::sinks::null_sink_mt>())) {
+
     cost_func_ = [&problem](const Eigen::VectorXd& x) {
         return problem.c.transpose() * x;
     };
-    
+
 };
 
 Result LPSolver::solve(){
 
-    spdlog::info("Starting solve");
+    logger_->info("Starting solve");
     Result result;
 
     if (problem_.get().hasInequalityConstraints() || problem_.get().hasEqualityConstraints())
@@ -30,7 +30,7 @@ Result LPSolver::solve(){
     }
     else
     {
-        spdlog::error("No constraints LP solver does not make sense");
+        logger_->error("No constraints LP solver does not make sense");
         throw std::runtime_error("No constraints LP solver does not make sense");
     }
 
@@ -97,7 +97,7 @@ void LPSolver::general_LP_solver(Result& result)
     int outer = 0;
     while (outer < max_outer) {
 
-        spdlog::info(
+        logger_->info(
             "iter={},cost={:.8f},equality_constraint={:.3e},inequality_constraint={:.3e},x={}",
             outer,
             cost_func_(x),
@@ -141,7 +141,7 @@ void LPSolver::general_LP_solver(Result& result)
 
             if (qr.rank() < KKT.rows())
             {
-                spdlog::error("KKT matrix is rank deficient. IPM cannot proceed.");
+                logger_->error("KKT matrix is rank deficient. IPM cannot proceed.");
                 throw std::runtime_error("KKT matrix is rank deficient. IPM cannot proceed.");
             }
 

@@ -6,30 +6,8 @@
 #include <cmath>
 #include <random>
 
-//Config loader
+// Config loader
 #include "config_loader.hpp"
-
-// Logger
-#include <spdlog/spdlog.h>
-#include <spdlog/sinks/basic_file_sink.h>
-#include <memory>
-
-void init_logger(const std::string& log_file_folder)
-{
-    auto logger = spdlog::basic_logger_mt(
-        "furia_optimizer_logger",
-        log_file_folder + "optimizer.log",
-        true // truncate = false append mode
-    );
-
-    logger->set_level(spdlog::level::info);
-
-    logger->set_pattern(
-        "[%Y-%m-%d %H:%M:%S.%e] [%l] %v"
-    );
-
-    spdlog::set_default_logger(logger);
-}
 
 
 double rosenbrock(const Eigen::VectorXd& params, const Eigen::VectorXd& x) {
@@ -67,7 +45,7 @@ Eigen::MatrixXd rosenbrock_hessian(const Eigen::VectorXd& params, const Eigen::V
 
 int main()
 {
-    //Setup solver options
+    // Setup solver options
     furiaopt::UnconstrainedSolverOptions options = furiaopt::load_solver_options("config/config.json");
 
     // Constants for the Rosenbrock function A = 1.0, B = 100.0
@@ -98,8 +76,7 @@ int main()
     problem.x0 = x_init;
 
     //Initialize logger
-    init_logger(options.log_file_folder_path);
-    spdlog::info("Application started");
+    options.logger->info("Application started");
 
     //Initialize solver and solve the problem
     furiaopt::UnconstrainedSolver default_solver(options, problem);

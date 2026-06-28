@@ -13,6 +13,7 @@ class QPSolver{
 
     std::reference_wrapper<const IPMSolverOptions> options_;
     std::reference_wrapper<const QPProblem> problem_;
+    std::shared_ptr<spdlog::logger> logger_;
 
 public:
 

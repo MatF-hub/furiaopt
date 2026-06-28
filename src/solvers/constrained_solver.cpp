@@ -14,10 +14,10 @@ inline std::string vec_to_string(const Eigen::VectorXd& v)
 namespace furiaopt{
 
 ConstrainedSolver::ConstrainedSolver(const ConstrainedSolverOptions& options, const NLPProblem& problem)
-    : options_(std::cref(options)), x0_(problem.x0){
+    : options_(std::cref(options)), x0_(problem.x0), logger_(options_.get().logger ? options_.get().logger : std::make_shared<spdlog::logger>("null", std::make_shared<spdlog::sinks::null_sink_mt>())){
 
     if (!problem.hasEqualityConstraints() && !problem.hasInequalityConstraints()) {
-        spdlog::warn("No constraints provided for the problem, call unconstrained solver instead");
+        logger_->warn("No constraints provided for the problem, call unconstrained solver instead");
     }
 
     if (problem.hasEqualityConstraints()) {
@@ -57,10 +57,10 @@ ConstrainedSolver::ConstrainedSolver(const ConstrainedSolverOptions& options, co
 };
 
 ConstrainedSolver::ConstrainedSolver(const ConstrainedSolverOptions& options, const LSProblem& problem)
-    : options_(std::cref(options)), x0_(problem.x0){
+    : options_(std::cref(options)), x0_(problem.x0), logger_(options_.get().logger ? options_.get().logger : std::make_shared<spdlog::logger>("null", std::make_shared<spdlog::sinks::null_sink_mt>())){
 
     if (!problem.hasEqualityConstraints() && !problem.hasInequalityConstraints()) {
-        spdlog::warn("No constraints provided for the problem, call unconstrained solver instead");
+        logger_->warn("No constraints provided for the problem, call unconstrained solver instead");
     }
 
     if (problem.hasEqualityConstraints()) {
@@ -127,7 +127,7 @@ Result ConstrainedSolver::solve(){
     //  s.t         grad_g(x_k)^T*p_k + g(x_k)=0
     //              grad_h(x_k)^T*p_k + h(x_k)>=0
 
-    spdlog::info("Starting solve");
+    logger_->info("Starting solve");
     Result result;
     result.summary.initial_cost = cost_func_(x0_);
 
@@ -177,7 +177,7 @@ Result ConstrainedSolver::solve(){
         Eigen::VectorXd D_lambda_i = result.lambda - lambda_i;
         Eigen::VectorXd D_mhu_i = result.mhu - mhu_i;
         
-        if ((grad_lagrangian.dot(p_i)).norm() < options_.get().gradient_tolerance) {
+        if ((grad_lagrangian.transpose()*p_i).norm() < options_.get().gradient_tolerance) {
             result.summary.converged = true;
             result.summary.termination_reason = TerminationReason::GradientTolerance;
             break;

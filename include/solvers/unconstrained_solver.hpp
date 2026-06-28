@@ -19,6 +19,7 @@ private:
     Eigen::VectorXd x0_;
 
     std::reference_wrapper<const UnconstrainedSolverOptions> options_;
+    std::shared_ptr<spdlog::logger> logger_;
 
 public:
 

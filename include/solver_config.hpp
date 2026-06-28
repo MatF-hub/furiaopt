@@ -1,6 +1,9 @@
 #pragma once
 #include <Eigen/Dense>
 #include <optional>
+#include <memory>
+#include <spdlog/logger.h>
+#include <spdlog/sinks/null_sink.h>
 #include "types.hpp"
 
 namespace furiaopt
@@ -23,7 +26,7 @@ struct UnconstrainedSolverOptions {
     double gradient_tolerance;
     double step_tolerance;
     double function_tolerance;
-    std::string log_file_folder_path;
+    std::shared_ptr<spdlog::logger> logger = std::make_shared<spdlog::logger>("null", std::make_shared<spdlog::sinks::null_sink_mt>());
 };
 
 struct IPMSolverOptions {
@@ -32,6 +35,7 @@ struct IPMSolverOptions {
     int max_outer;
     int max_inner;
     double ipm_tol;
+    std::shared_ptr<spdlog::logger> logger = std::make_shared<spdlog::logger>("null", std::make_shared<spdlog::sinks::null_sink_mt>());
 };
 
 struct ConstrainedSolverOptions: UnconstrainedSolverOptions {

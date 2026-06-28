@@ -11,7 +11,7 @@ inline std::string vec_to_string(const Eigen::VectorXd& v)
 }
 namespace furiaopt{
 
-QPSolver::QPSolver(const IPMSolverOptions& options, const QPProblem& problem) : options_(std::cref(options)), problem_(std::cref(problem)) {
+QPSolver::QPSolver(const IPMSolverOptions& options, const QPProblem& problem) : options_(std::cref(options)), problem_(std::cref(problem)), logger_(options_.get().logger ? options_.get().logger : std::make_shared<spdlog::logger>("null", std::make_shared<spdlog::sinks::null_sink_mt>())) {
 
     cost_func_ = [&problem](const Eigen::VectorXd& x) {
         return 0.5 * x.transpose() * problem.H * x + problem.c.dot(x);
@@ -20,7 +20,7 @@ QPSolver::QPSolver(const IPMSolverOptions& options, const QPProblem& problem) : 
 
 Result QPSolver::solve(){
 
-    spdlog::info("Starting solve");
+    logger_->info("Starting solve");
     Result result;
 
     // Initialize variables
@@ -111,7 +111,7 @@ void QPSolver::equality_constrained_QP_solver(Result& result)
 
     if (ldlt.info() == Eigen::ComputationInfo::NumericalIssue)
     {
-        spdlog::error("KKT matrix is rank deficient or numerically unstable. Cannot solve equality constrained QP.");
+        logger_->error("KKT matrix is rank deficient or numerically unstable. Cannot solve equality constrained QP.");
         throw std::runtime_error("KKT matrix is rank deficient. Cannot solve equality constrained QP.");
     }
 
@@ -172,7 +172,7 @@ void QPSolver::general_QP_solver(Result& result)
     int outer = 0;
     while (outer < max_outer) {
         
-        spdlog::info(
+        logger_->info(
             "iter={},cost={:.8f},equality_constraint={:.3e},inequality_constraint={:.3e},x={}",
             outer,
             cost_func_(x),
@@ -215,7 +215,7 @@ void QPSolver::general_QP_solver(Result& result)
 
             if (qr.rank() < KKT.rows())
             {
-                spdlog::error("KKT matrix is rank deficient. IPM cannot proceed.");
+                logger_->error("KKT matrix is rank deficient. IPM cannot proceed.");
                 throw std::runtime_error("KKT matrix is rank deficient. IPM cannot proceed.");
             }
 
