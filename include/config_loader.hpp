@@ -127,19 +127,19 @@ inline IPMSolverOptions load_ipm_solver_options(
     IPMSolverOptions opt;
 
     opt.tau_initial =
-        j.value("tau_initial", 1.0);
+        j.value("qp_tau_initial", 1.0);
 
     opt.tau_factor =
-        j.value("tau_factor", 0.2);
+        j.value("qp_tau_factor", 0.2);
 
     opt.max_outer =
-        j.value("max_outer", 40);
+        j.value("qp_max_outer", 40);
 
     opt.max_inner =
-        j.value("max_inner", 50);
+        j.value("qp_max_inner", 50);
 
     opt.ipm_tol =
-        j.value("ipm_tol", 1e-8);
+        j.value("qp_ipm_tol", 1e-8);
 
     // Create logger based on log_file_folder_path
     auto log_folder = j.value("log_file_folder_path", std::string("logs/"));

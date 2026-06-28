@@ -9,12 +9,6 @@
 
   "log_file_folder_path": "/home/matteo/optimizer_ws/logs/",
 
-  "tau_initial": 1.0,
-  "tau_factor": 0.2,
-  "max_outer": 40,
-  "max_inner": 50,
-  "ipm_tol": 1e-8,
-
   "qp_tau_initial": 1.0,
   "qp_tau_factor": 0.2,
   "qp_max_outer": 40,
