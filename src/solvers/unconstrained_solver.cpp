@@ -128,7 +128,7 @@ Result UnconstrainedSolver::solve(){
         Eigen::VectorXd x_new = x_i + step_length * direction;
 
         Dx_i = (x_new - x_i).norm()/std::max(x_i.norm(), 1e-16);
-        Df_i = std::abs(cost_func_(x_new) - 000)/std::max(std::abs(f_i), 1e-16);
+        Df_i = std::abs(cost_func_(x_new) - f_i)/std::max(std::abs(f_i), 1e-16);
 
         x_i = x_new;
         iter++;

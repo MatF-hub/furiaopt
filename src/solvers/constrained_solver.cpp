@@ -27,6 +27,11 @@ ConstrainedSolver::ConstrainedSolver(const ConstrainedSolverOptions& options, co
         equality_constraint_func_ = problem.equality_constraint_func.value();
         jacobian_equality_constraint_func_ = problem.jacobian_equality_constraint_func.value();
     }
+    else
+    {
+        equality_constraint_func_ = [](const Eigen::VectorXd& x) { return Eigen::VectorXd::Zero(); };
+        jacobian_equality_constraint_func_ = [](const Eigen::VectorXd& x) { return Eigen::MatrixXd::Zero(); };
+    };
 
     if (problem.hasInequalityConstraints()) {
         if (!problem.jacobian_inequality_constraint_func.has_value()) {
@@ -35,6 +40,11 @@ ConstrainedSolver::ConstrainedSolver(const ConstrainedSolverOptions& options, co
         inequality_constraint_func_ = problem.inequality_constraint_func.value();
         jacobian_inequality_constraint_func_ = problem.jacobian_inequality_constraint_func.value();
     }
+    else
+    {
+        inequality_constraint_func_ = [](const Eigen::VectorXd& x) { return Eigen::VectorXd::Zero(); };
+        jacobian_inequality_constraint_func_ = [](const Eigen::VectorXd& x) { return Eigen::MatrixXd::Zero(); };
+    };
 
     cost_func_ = [&problem](const Eigen::VectorXd& x) { return problem.cost_func(x); };
     gradient_func_ = [&problem](const Eigen::VectorXd& x) { return compute_gradient(problem, x); };
@@ -60,6 +70,12 @@ ConstrainedSolver::ConstrainedSolver(const ConstrainedSolverOptions& options, co
         equality_constraint_func_ = problem.equality_constraint_func.value();
         jacobian_equality_constraint_func_ = problem.jacobian_equality_constraint_func.value();
     }
+    else
+    {
+        equality_constraint_func_ = [](const Eigen::VectorXd& x) { return Eigen::VectorXd::Zero(); };
+        jacobian_equality_constraint_func_ = [](const Eigen::VectorXd& x) { return Eigen::MatrixXd::Zero(); };
+    };
+    
 
     if (problem.hasInequalityConstraints()) {
         if (!problem.jacobian_inequality_constraint_func.has_value()) {
@@ -68,6 +84,11 @@ ConstrainedSolver::ConstrainedSolver(const ConstrainedSolverOptions& options, co
         inequality_constraint_func_ = problem.inequality_constraint_func.value();
         jacobian_inequality_constraint_func_ = problem.jacobian_inequality_constraint_func.value();
     }
+    else
+    {
+        inequality_constraint_func_ = [](const Eigen::VectorXd& x) { return Eigen::VectorXd::Zero(); };
+        jacobian_inequality_constraint_func_ = [](const Eigen::VectorXd& x) { return Eigen::MatrixXd::Zero(); };
+    };
 
     cost_func_ = [&problem](const Eigen::VectorXd& x) {
         return problem.residual_func(x).transpose() * problem.residual_func(x);
@@ -156,7 +177,7 @@ Result ConstrainedSolver::solve(){
         Eigen::VectorXd D_lambda_i = result.lambda - lambda_i;
         Eigen::VectorXd D_mhu_i = result.mhu - mhu_i;
         
-        if ((grad_lagrangian*p_i).norm() < options_.get().gradient_tolerance) {
+        if ((grad_lagrangian.dot(p_i)).norm() < options_.get().gradient_tolerance) {
             result.summary.converged = true;
             result.summary.termination_reason = TerminationReason::GradientTolerance;
             break;
@@ -207,6 +228,10 @@ Result ConstrainedSolver::solve(){
     bool eq_constraint_satisfied = equality_constraint_func_(x_i).lpNorm<Eigen::Infinity>() <= options_.get().function_tolerance; //Here should go constraint tolerance
     bool inequality_constraint_satisfied = inequality_constraint_func_(x_i).lpNorm<Eigen::Infinity>() <= options_.get().function_tolerance; //Here should go constraint tolerance
     result.summary.converged = iter < options_.get().max_iter && eq_constraint_satisfied && inequality_constraint_satisfied;
+    if (!result.summary.converged)
+    {
+            result.summary.termination_reason = TerminationReason::MaxIterations;
+    }            
 
     return result;
 };
