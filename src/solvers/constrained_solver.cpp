@@ -21,33 +21,33 @@ ConstrainedSolver::ConstrainedSolver(const ConstrainedSolverOptions& options, co
     }
 
     if (problem.hasEqualityConstraints()) {
-        if (!problem.jacobian_equality_constraint_func.has_value()) {
+        if (!problem.gradient_equality_constraint_func.has_value()) {
             throw std::invalid_argument("Jacobian of equality constraints must be provided");
         }
         equality_constraint_func_ = problem.equality_constraint_func.value();
-        jacobian_equality_constraint_func_ = problem.jacobian_equality_constraint_func.value();
+        gradient_equality_constraint_func_ = problem.gradient_equality_constraint_func.value();
     }
     else
     {
-        equality_constraint_func_ = [](const Eigen::VectorXd& x) { return Eigen::VectorXd::Zero(); };
-        jacobian_equality_constraint_func_ = [](const Eigen::VectorXd& x) { return Eigen::MatrixXd::Zero(); };
+        equality_constraint_func_ = [](const Eigen::VectorXd& x) -> Eigen::VectorXd { return Eigen::VectorXd::Zero(0); };
+        gradient_equality_constraint_func_ = [](const Eigen::VectorXd& x) -> Eigen::MatrixXd { return Eigen::MatrixXd::Zero(x.rows(), 0); };
     };
 
     if (problem.hasInequalityConstraints()) {
-        if (!problem.jacobian_inequality_constraint_func.has_value()) {
+        if (!problem.gradient_inequality_constraint_func.has_value()) {
             throw std::invalid_argument("Jacobian of inequality constraints must be provided");
         }
         inequality_constraint_func_ = problem.inequality_constraint_func.value();
-        jacobian_inequality_constraint_func_ = problem.jacobian_inequality_constraint_func.value();
+        gradient_inequality_constraint_func_ = problem.gradient_inequality_constraint_func.value();
     }
     else
     {
-        inequality_constraint_func_ = [](const Eigen::VectorXd& x) { return Eigen::VectorXd::Zero(); };
-        jacobian_inequality_constraint_func_ = [](const Eigen::VectorXd& x) { return Eigen::MatrixXd::Zero(); };
+        inequality_constraint_func_ = [](const Eigen::VectorXd& x) -> Eigen::VectorXd { return Eigen::VectorXd::Zero(0); };
+        gradient_inequality_constraint_func_ = [](const Eigen::VectorXd& x) -> Eigen::MatrixXd { return Eigen::MatrixXd::Zero(x.rows(), 0); };
     };
 
-    cost_func_ = [&problem](const Eigen::VectorXd& x) { return problem.cost_func(x); };
-    gradient_func_ = [&problem](const Eigen::VectorXd& x) { return compute_gradient(problem, x); };
+    cost_func_ = [&problem](const Eigen::VectorXd& x) -> double { return problem.cost_func(x); };
+    gradient_func_ = [&problem](const Eigen::VectorXd& x) -> Eigen::VectorXd { return compute_gradient(problem, x); };
 
     // Initialize the approximate Hessian strategy based on the selected method
     auto strategy = BFGSHessianApproximation(problem);
@@ -64,36 +64,36 @@ ConstrainedSolver::ConstrainedSolver(const ConstrainedSolverOptions& options, co
     }
 
     if (problem.hasEqualityConstraints()) {
-        if (!problem.jacobian_equality_constraint_func.has_value()) {
+        if (!problem.gradient_equality_constraint_func.has_value()) {
             throw std::invalid_argument("Jacobian of equality constraints must be provided");
         }
         equality_constraint_func_ = problem.equality_constraint_func.value();
-        jacobian_equality_constraint_func_ = problem.jacobian_equality_constraint_func.value();
+        gradient_equality_constraint_func_ = problem.gradient_equality_constraint_func.value();
     }
     else
     {
-        equality_constraint_func_ = [](const Eigen::VectorXd& x) { return Eigen::VectorXd::Zero(); };
-        jacobian_equality_constraint_func_ = [](const Eigen::VectorXd& x) { return Eigen::MatrixXd::Zero(); };
+        equality_constraint_func_ = [](const Eigen::VectorXd& x) -> Eigen::VectorXd { return Eigen::VectorXd::Zero(0); };
+        gradient_equality_constraint_func_ = [](const Eigen::VectorXd& x) -> Eigen::MatrixXd { return Eigen::MatrixXd::Zero(x.rows(), 0); };
     };
     
 
     if (problem.hasInequalityConstraints()) {
-        if (!problem.jacobian_inequality_constraint_func.has_value()) {
+        if (!problem.gradient_inequality_constraint_func.has_value()) {
             throw std::invalid_argument("Jacobian of inequality constraints must be provided");
         }
         inequality_constraint_func_ = problem.inequality_constraint_func.value();
-        jacobian_inequality_constraint_func_ = problem.jacobian_inequality_constraint_func.value();
+        gradient_inequality_constraint_func_ = problem.gradient_inequality_constraint_func.value();
     }
     else
     {
-        inequality_constraint_func_ = [](const Eigen::VectorXd& x) { return Eigen::VectorXd::Zero(); };
-        jacobian_inequality_constraint_func_ = [](const Eigen::VectorXd& x) { return Eigen::MatrixXd::Zero(); };
+        inequality_constraint_func_ = [](const Eigen::VectorXd& x) -> Eigen::VectorXd { return Eigen::VectorXd::Zero(0); };
+        gradient_inequality_constraint_func_ = [](const Eigen::VectorXd& x) -> Eigen::MatrixXd { return Eigen::MatrixXd::Zero(x.rows(), 0); };
     };
 
-    cost_func_ = [&problem](const Eigen::VectorXd& x) {
+    cost_func_ = [&problem](const Eigen::VectorXd& x) -> double {
         return problem.residual_func(x).transpose() * problem.residual_func(x);
     };
-    gradient_func_ = [&problem](const Eigen::VectorXd& x) {
+    gradient_func_ = [&problem](const Eigen::VectorXd& x) -> Eigen::VectorXd {
         if (problem.gradient_residual_func.has_value()) {
             return 2 * problem.gradient_residual_func.value()(x)* problem.residual_func(x);
         } else {
@@ -135,8 +135,8 @@ Result ConstrainedSolver::solve(){
     double Dx_i = std::numeric_limits<double>::infinity();
     double Df_i = std::numeric_limits<double>::infinity();
 
-    const int num_equality_constraints = jacobian_equality_constraint_func_ ? jacobian_equality_constraint_func_(x0_).rows() : 0;
-    const int num_inequality_constraints = jacobian_inequality_constraint_func_ ? jacobian_inequality_constraint_func_(x0_).rows() : 0;
+    const int num_equality_constraints = gradient_equality_constraint_func_ ? gradient_equality_constraint_func_(x0_).cols() : 0;
+    const int num_inequality_constraints = gradient_inequality_constraint_func_ ? gradient_inequality_constraint_func_(x0_).cols() : 0;
     Eigen::VectorXd lambda_i = Eigen::VectorXd::Zero(num_equality_constraints);
     Eigen::VectorXd mhu_i = Eigen::VectorXd::Zero(num_inequality_constraints);
     Eigen::VectorXd sigma_j = Eigen::VectorXd::Ones(num_equality_constraints);
@@ -145,8 +145,8 @@ Result ConstrainedSolver::solve(){
 
     while (iter < options_.get().max_iter) {
         Eigen::VectorXd grad_f = gradient_func_(x_i);
-        Eigen::MatrixXd grad_eq = jacobian_equality_constraint_func_(x_i);
-        Eigen::MatrixXd grad_ineq = jacobian_inequality_constraint_func_(x_i);
+        Eigen::MatrixXd grad_eq = gradient_equality_constraint_func_(x_i);
+        Eigen::MatrixXd grad_ineq = gradient_inequality_constraint_func_(x_i);
 
         Eigen::VectorXd grad_lagrangian = grad_f - grad_eq*lambda_i - grad_ineq*mhu_i;
 
@@ -189,7 +189,7 @@ Result ConstrainedSolver::solve(){
                                                  equality_constraint_func_, 
                                                  inequality_constraint_func_, 
                                                  gradient_func_, 
-                                                 jacobian_inequality_constraint_func_,
+                                                 gradient_inequality_constraint_func_,
                                                  x_i,
                                                  p_i, 
                                                  sigma_j, 

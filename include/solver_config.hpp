@@ -44,10 +44,10 @@ struct ConstrainedSolverOptions: UnconstrainedSolverOptions {
 
 struct LinearConstraints {
 
-    std::optional<Eigen::MatrixXd> A; // Coefficients for linear equality constraints
-    std::optional<Eigen::VectorXd> b; // Constants for linear equality constraints
-    std::optional<Eigen::MatrixXd> C; // Coefficients for linear inequality constraints
-    std::optional<Eigen::VectorXd> d; // Constants for linear inequality constraints
+    std::optional<Eigen::MatrixXd> A; // Coefficients for linear equality constraints, dimension (p x n)
+    std::optional<Eigen::VectorXd> b; // Constants for linear equality constraints, dimension (p x 1)
+    std::optional<Eigen::MatrixXd> C; // Coefficients for linear inequality constraints, dimension (q x n)
+    std::optional<Eigen::VectorXd> d; // Constants for linear inequality constraints, dimension (q x 1)
 
     bool hasEqualityConstraints() const { return A.has_value() && b.has_value(); }
     bool hasInequalityConstraints() const { return C.has_value() && d.has_value(); }
@@ -58,7 +58,7 @@ struct LinearConstraints {
 //                         Cx + d >= 0      (inequality constraints)
 struct LPProblem: public LinearConstraints{
     std::optional<Eigen::VectorXd> x0;
-    Eigen::VectorXd c; // Linear term
+    Eigen::VectorXd c; // Linear term, dimension (n x 1)
 
 };
 
@@ -67,20 +67,20 @@ struct LPProblem: public LinearConstraints{
 //                         Cx + d >= 0      (inequality constraints)
 struct QPProblem: public LinearConstraints {
     std::optional<Eigen::VectorXd> x0;
-    Eigen::MatrixXd H; // Quadratic term
-    Eigen::VectorXd c; // Linear term
+    Eigen::MatrixXd H; // Quadratic term, dimension (n x n)
+    Eigen::VectorXd c; // Linear term, dimension (n x 1)
 };
 
 struct NonLinearConstraints {
     // equality constraints: g(x) = 0
     // Notice linear equality constrainst are rapresented as g(x) = Ax + b = 0
     std::optional<EqualityConstraintFunc> equality_constraint_func;
-    std::optional<JacobianEqualityConstraintFunc> jacobian_equality_constraint_func;
+    std::optional<GradientEqualityConstraintFunc> gradient_equality_constraint_func;
 
     // Inequality constraints: h(x) >= 0
     // Notice linear Inequality constrainst are rapresented as h(x) = Cx + d >= 0
     std::optional<InequalityConstraintFunc> inequality_constraint_func;
-    std::optional<JacobianInequalityConstraintFunc> jacobian_inequality_constraint_func;
+    std::optional<GradientInequalityConstraintFunc> gradient_inequality_constraint_func;
 
     bool hasEqualityConstraints() const { return equality_constraint_func.has_value(); }
     bool hasInequalityConstraints() const { return inequality_constraint_func.has_value(); }
@@ -126,9 +126,9 @@ struct SolverSummary {
 };
 
 struct Result {
-    Eigen::VectorXd x = Eigen::VectorXd::Zero(0);
-    Eigen::VectorXd lambda = Eigen::VectorXd::Zero(0);
-    Eigen::VectorXd mhu = Eigen::VectorXd::Zero(0);
+    Eigen::VectorXd x = Eigen::VectorXd::Zero(0); //It's dimension is n
+    Eigen::VectorXd lambda = Eigen::VectorXd::Zero(0); //It's dimension is p, the number of equality constraints
+    Eigen::VectorXd mhu = Eigen::VectorXd::Zero(0); //It's dimension is q, the number of inequality constraints
     SolverSummary summary;
 };
 

@@ -13,7 +13,7 @@ namespace furiaopt{
 
 QPSolver::QPSolver(const IPMSolverOptions& options, const QPProblem& problem) : options_(std::cref(options)), problem_(std::cref(problem)), logger_(options_.get().logger ? options_.get().logger : std::make_shared<spdlog::logger>("null", std::make_shared<spdlog::sinks::null_sink_mt>())) {
 
-    cost_func_ = [&problem](const Eigen::VectorXd& x) {
+    cost_func_ = [&problem](const Eigen::VectorXd& x) -> double {
         return 0.5 * x.transpose() * problem.H * x + problem.c.dot(x);
     };
 };
@@ -251,7 +251,11 @@ void QPSolver::general_QP_solver(Result& result)
     }
 
     Eigen::VectorXd dual_stationary = H * x + c - A.transpose() * lambda;
-    Eigen::VectorXd mhu = C.transpose().colPivHouseholderQr().solve(dual_stationary);
+    Eigen::VectorXd mhu = Eigen::VectorXd::Zero(C.rows());
+    if (C.rows() > 0) {
+        // Solve for mhu using least squares to handle potential rank deficiency
+        mhu = C.transpose().colPivHouseholderQr().solve(dual_stationary);
+    }    
     // Wrap results
     result.x = x;
     result.lambda = lambda;

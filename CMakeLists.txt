@@ -103,7 +103,7 @@ if(FURIAOPTIMIZER_BUILD_TESTS)
     find_package(Catch2 CONFIG REQUIRED)
 
     add_executable(furiaopt_tests
-        #tests/example_test.cpp
+        tests/test_furiaopt.cpp
     )
 
     target_link_libraries(furiaopt_tests

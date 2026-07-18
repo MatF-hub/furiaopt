@@ -17,9 +17,9 @@ class ConstrainedSolver{
 
     //Constrained
     EqualityConstraintFunc equality_constraint_func_;
-    JacobianEqualityConstraintFunc jacobian_equality_constraint_func_;
+    GradientEqualityConstraintFunc gradient_equality_constraint_func_;
     InequalityConstraintFunc inequality_constraint_func_;
-    JacobianInequalityConstraintFunc jacobian_inequality_constraint_func_;
+    GradientInequalityConstraintFunc gradient_inequality_constraint_func_;
 
     Eigen::VectorXd x0_;
 

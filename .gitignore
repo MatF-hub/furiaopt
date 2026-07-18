@@ -14,4 +14,5 @@ vcpkg/
 *.a
 *.so
 
-*.md 
+*.md
+!README.md 

@@ -19,8 +19,8 @@ UnconstrainedSolver::UnconstrainedSolver(const UnconstrainedSolverOptions& optio
         logger_->warn("Constraints are present in the problem, please use the ConstrainedSolver instead of UnconstrainedSolver");
     }
 
-    cost_func_ = [&problem](const Eigen::VectorXd& x) { return problem.cost_func(x); };
-    gradient_func_ = [&problem](const Eigen::VectorXd& x) { return compute_gradient(problem, x); };
+    cost_func_ = [&problem](const Eigen::VectorXd& x) -> double { return problem.cost_func(x); };
+    gradient_func_ = [&problem](const Eigen::VectorXd& x) -> Eigen::VectorXd { return compute_gradient(problem, x); };
 
     // Initialize the direction strategy based on the selected method
     switch (options_.get().direction_method) {
@@ -60,10 +60,10 @@ UnconstrainedSolver::UnconstrainedSolver(const UnconstrainedSolverOptions& optio
     if (problem.hasEqualityConstraints() || problem.hasInequalityConstraints()) {
         logger_->warn("Constraints are present in the problem, please use the ConstrainedSolver instead of UnconstrainedSolver");
     }
-    cost_func_ = [&problem](const Eigen::VectorXd& x) {
+    cost_func_ = [&problem](const Eigen::VectorXd& x) -> double {
         return problem.residual_func(x).transpose() * problem.residual_func(x);
     };
-    gradient_func_ = [&problem](const Eigen::VectorXd& x) {
+    gradient_func_ = [&problem](const Eigen::VectorXd& x) -> Eigen::VectorXd {
         if (problem.gradient_residual_func.has_value()) {
             return 2 * problem.gradient_residual_func.value()(x) * problem.residual_func(x);
         } else {

@@ -66,7 +66,7 @@ inline double compute_step_length(const GlobalizationMethod& globalization_metho
                                   const EqualityConstraintFunc& g, 
                                   const InequalityConstraintFunc& h, 
                                   const GradientFunc& grad_f, 
-                                  const JacobianInequalityConstraintFunc& grad_h,
+                                  const GradientInequalityConstraintFunc& grad_h,
                                   const Eigen::VectorXd& x,
                                   const Eigen::VectorXd& direction, 
                                   const Eigen::VectorXd& sigma, 

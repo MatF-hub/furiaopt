@@ -13,7 +13,7 @@ namespace furiaopt{
 
 LPSolver::LPSolver(const IPMSolverOptions& options, const LPProblem& problem) : options_(std::cref(options)), problem_(std::cref(problem)), logger_(options_.get().logger ? options_.get().logger : std::make_shared<spdlog::logger>("null", std::make_shared<spdlog::sinks::null_sink_mt>())) {
 
-    cost_func_ = [&problem](const Eigen::VectorXd& x) {
+    cost_func_ = [&problem](const Eigen::VectorXd& x) -> double {
         return problem.c.transpose() * x;
     };
 
@@ -176,7 +176,11 @@ void LPSolver::general_LP_solver(Result& result)
     }
 
     Eigen::VectorXd dual_stationary = c - A.transpose() * lambda;
-    Eigen::VectorXd mhu = C.transpose().colPivHouseholderQr().solve(dual_stationary);
+    Eigen::VectorXd mhu = Eigen::VectorXd::Zero(C.rows());
+    if (C.rows() > 0) {
+        // Solve for mhu using least squares to handle potential rank deficiency
+        mhu = C.transpose().colPivHouseholderQr().solve(dual_stationary);
+    }
     // Pack results
     result.x = x;
     result.lambda = lambda;
@@ -245,11 +249,14 @@ Eigen::VectorXd LPSolver::computeFeasiblePoint(
     // Check that point is feasible.
     Eigen::VectorXd x = aux_result.x.head(nx);
 
-    const bool equality_feasible =
+    bool equality_feasible =
         (A * x + b).norm() <= 1e-10;
 
-    const bool inequality_feasible =
-        (C * x + d).minCoeff() >= -1e-10;
+    bool inequality_feasible = true;
+    if (C.rows() > 0)
+    {
+        inequality_feasible = (C * x + d).minCoeff() >= -1e-10;
+    }
 
     if (equality_feasible && inequality_feasible)
     {
