@@ -371,13 +371,14 @@ TEST_CASE("SQP: quadratic objective with linear equality constraint", "[sqp][equ
     };
 
     p.gradient_equality_constraint_func = [](const VectorXd&) {
-        MatrixXd J(2,1);
-        J << 1.0,
+        MatrixXd JT(2,1);
+        JT << 1.0,
              1.0;
-        return J.transpose();
+        return JT;
     };
 
-    ConstrainedSolver s(con_opts(), p);
+    auto o = con_opts();
+    ConstrainedSolver s(o, p);
     Result r = s.solve();
 
     VectorXd expected(2);
@@ -426,13 +427,14 @@ TEST_CASE("SQP: quadratic objective with active inequality constraint", "[sqp][i
     };
 
     p.gradient_inequality_constraint_func = [](const VectorXd&) {
-        MatrixXd J(2,1);
-        J << -1.0,
+        MatrixXd JT(2,1);
+        JT << -1.0,
              -1.0;
-        return J.transpose();
+        return JT;
     };
 
-    ConstrainedSolver s(con_opts(), p);
+    auto o = con_opts();
+    ConstrainedSolver s(o, p);
     Result r = s.solve();
 
     VectorXd expected(2);
@@ -475,18 +477,23 @@ TEST_CASE("SQP: nonlinear equality constraint circle", "[sqp][nonlinear]")
     };
 
     p.gradient_equality_constraint_func = [](const VectorXd& x) {
-        MatrixXd J(2,1);
-        J << 2*x[0],
-             2*x[1];
-        return J.transpose();
+        MatrixXd JT(2,1);
+        JT << 2*x[0], 2*x[1];
+        return JT;
     };
 
-    ConstrainedSolver s(con_opts(), p);
+    auto o = con_opts();
+    ConstrainedSolver s(o, p);
     Result r = s.solve();
 
     VectorXd expected(2);
     expected << -std::sqrt(2)/2,
                 -std::sqrt(2)/2;
+
+    CAPTURE(r.x);
+    CAPTURE(r.summary.converged);
+    CAPTURE(r.summary.termination_reason);
+    CAPTURE(r.summary.iterations);
 
     REQUIRE(r.x.isApprox(expected, 1e-4));
 }
@@ -527,10 +534,10 @@ TEST_CASE("SQP: nonlinear equality with active inequality", "[sqp][mixed]")
     };
 
     p.gradient_equality_constraint_func = [](const VectorXd& x) {
-        MatrixXd J(2,1);
-        J << 2*x[0],
+        MatrixXd JT(2,1);
+        JT << 2*x[0],
              2*x[1];
-        return J.transpose();
+        return JT;
     };
 
     p.inequality_constraint_func = [](const VectorXd& x) {
@@ -540,13 +547,14 @@ TEST_CASE("SQP: nonlinear equality with active inequality", "[sqp][mixed]")
     };
 
     p.gradient_inequality_constraint_func = [](const VectorXd&) {
-        MatrixXd J(2,1);
-        J << 1.0,
+        MatrixXd JT(2,1);
+        JT << 1.0,
              0.0;
-        return J.transpose();
+        return JT;
     };
 
-    ConstrainedSolver s(con_opts(), p);
+    auto o = con_opts();
+    ConstrainedSolver s(o, p);
     Result r = s.solve();
 
     VectorXd expected(2);
