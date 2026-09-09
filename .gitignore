@@ -9,10 +9,16 @@ vcpkg/
 .vscode/
 .cmake/
 
+# Python bytecode cache (auto-generated)
+__pycache__/
+*.pyc
+
 # Compiled files
 *.o
 *.a
 *.so
 
 *.md
-!README.md 
+!README.md
+!docs/problems/delta_robot_opt_problem_math.md
+!docs/getting_started.md

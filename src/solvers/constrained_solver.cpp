@@ -2,6 +2,7 @@
 #include "solvers/qp_solver.hpp"
 #include "generalization_method.hpp"
 #include "compute_gradient.hpp"
+#include "utils.hpp"
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/basic_file_sink.h>
 
@@ -150,6 +151,13 @@ Result ConstrainedSolver::solve(){
         Eigen::MatrixXd grad_eq = gradient_equality_constraint_func_(x_i);
         Eigen::MatrixXd grad_ineq = gradient_inequality_constraint_func_(x_i);
 
+        const double f_i = cost_func_(x_i);
+        const double eq_constraint_violation = g_i.size() > 0 ? g_i.lpNorm<Eigen::Infinity>() : 0.0;
+        const double ineq_constraint_violation = h_i.size() > 0 ? std::max( - h_i.minCoeff() , 0.0) : 0.0;
+        logger_->info("iter={},cost={:.8f},equality_constraint={:.3e},inequality_constraint={:.3e},x={}",
+                      iter, f_i, eq_constraint_violation, ineq_constraint_violation,
+                      furiaopt::utils::vec_to_string(x_i));
+
         Eigen::VectorXd grad_lagrangian = grad_f - grad_eq*lambda_i - grad_ineq*mhu_i;
 
         if (Dx_i <= options_.get().step_tolerance) {
@@ -182,10 +190,8 @@ Result ConstrainedSolver::solve(){
         Eigen::VectorXd D_lambda_i = QP_result.lambda - lambda_i;
         Eigen::VectorXd D_mhu_i = QP_result.mhu - mhu_i;
 
-        //Check constraint violation.
-        const double eq_constraint_violation = g_i.size() > 0 ? g_i.lpNorm<Eigen::Infinity>() : 0.0;
-        const double ineq_constraint_violation = h_i.size() > 0 ? std::max( - h_i.minCoeff() , 0.0) : 0.0;
-        const bool feasible = eq_constraint_violation <= options_.get().constraint_tolerance 
+        //Check constraint violation (computed above, alongside the per-iteration log line).
+        const bool feasible = eq_constraint_violation <= options_.get().constraint_tolerance
                               && ineq_constraint_violation <= options_.get().constraint_tolerance;
 
         if ((grad_lagrangian.transpose()*p_i).norm() < options_.get().gradient_tolerance && feasible) {
@@ -229,7 +235,6 @@ Result ConstrainedSolver::solve(){
         mhu_i = mhu_i + step_length * D_mhu_i;
 
         Dx_i = (x_new - x_i).norm()/std::max(x_i.norm(), 1e-16);
-        double f_i = cost_func_(x_i);
         Df_i = std::abs(cost_func_(x_new) - f_i)/std::max(std::abs(f_i), 1e-16);
 
         x_i = x_new;

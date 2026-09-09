@@ -80,6 +80,10 @@ if(FURIAOPTIMIZER_BUILD_EXAMPLES)
     #Executable for the Trajectory Smoothing QP example
     add_executable(qp_trajectory_example examples/qp_2d_trajectory_smoothing.cpp)
     target_link_libraries(qp_trajectory_example PRIVATE furiaopt spdlog::spdlog)
+
+    #Executable for the Delta Robot Tracking SQP example
+    add_executable(sqp_delta_robot_example examples/sqp_delta_robot.cpp)
+    target_link_libraries(sqp_delta_robot_example PRIVATE furiaopt spdlog::spdlog)
 endif()
 
 # =====================================================
