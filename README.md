@@ -4,12 +4,12 @@
 
 FuriaOpt is a C++ optimization library designed to solve NLP, LS, QP, and LP problems, with or without linear and non-linear constraints.
 
-<div style="display: flex; flex-direction: row; justify-content: center; align-items: center;">
+<div align="center" style="display: flex; flex-direction: row; justify-content: center; align-items: center;">
   <img src="docs/images/sqp_delta_robot_problem_4_star_two_obstacles_trajectory.gif" width="45%">
   <img src="docs/images/qp_trajectory-cropped.png" width="45%">
 </div>
 
-<div style="display: flex; flex-direction: row; justify-content: center; align-items: center;">
+<div align="center" style="display: flex; flex-direction: row; justify-content: center; align-items: center;">
   <img src="docs/images/rosenbrock-cropped.png" width="45%">
 </div>
 
@@ -46,7 +46,7 @@ Delta robot joint-space trajectory optimization uses a parallel, closed-chain ki
 
 For mathematical derivation of the optimization problem refer to [delta robot opt problem](docs/problems/delta_robot_opt_problem_math.md).
 
-<div style="display: flex; flex-direction: row; justify-content: center; align-items: center;">
+<div align="center" style="display: flex; flex-direction: row; justify-content: center; align-items: center;">
   <img src="docs/images/sqp_delta_robot_problem_2_pentagon_two_obstacles_trajectory.gif" width="45%">
   <img src="docs/images/sqp_delta_robot_problem_2_pentagon_two_obstacles_convergence.png" width="45%">
 </div>
@@ -56,7 +56,7 @@ The chosen example for Unconstrained NLP problem solving is the classic Rosenbro
 
 $$f(x_0, x_1) = (a - x_0)^2 + b(x_1 - x_0^2)^2, \quad a = 1,\ b = 100$$
 
-<div style="display: flex; flex-direction: row; justify-content: center; align-items: center;">
+<div align="center" style="display: flex; flex-direction: row; justify-content: center; align-items: center;">
   <img src="docs/images/rosenbrock.png">
 </div>
 
@@ -69,7 +69,7 @@ $$\min_{u}\ \tfrac12\sum_{d\in\{x,y\}}\lVert Du_d\rVert_2^2 \quad\text{s.t.}\qua
 
 $D$ is the discrete 2nd-difference operator, $(Du)_i = u_{i-1} - 2u_i + u_{i+1}$, a finite-difference approximation of acceleration at unit time steps; $A=\{0,10,30,49\}$ are the pinned waypoints, $n$ the corridor normal. We don't supply $x_0$: the solver computes its own strictly feasible starting point via an internal phase-1 QP.
 
-<div style="display: flex; flex-direction: row; justify-content: center; align-items: center;">
+<div align="center" style="display: flex; flex-direction: row; justify-content: center; align-items: center;">
   <img src="docs/images/qp_trajectory.png">
 </div>
 
